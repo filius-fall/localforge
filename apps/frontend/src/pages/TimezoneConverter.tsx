@@ -99,21 +99,31 @@ function TimezoneConverter() {
           <div className="form-grid">
             <label className="field">
               <span>Source time zone</span>
-              <input
-                list="zone-list"
+              <select
                 value={sourceZone}
                 onChange={(event) => setSourceZone(event.target.value)}
                 required
-              />
+              >
+                {zoneOptions.map((zone) => (
+                  <option key={zone} value={zone}>
+                    {zone}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="field">
               <span>Target time zone</span>
-              <input
-                list="zone-list"
+              <select
                 value={targetZone}
                 onChange={(event) => setTargetZone(event.target.value)}
                 required
-              />
+              >
+                {zoneOptions.map((zone) => (
+                  <option key={zone} value={zone}>
+                    {zone}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="field">
               <span>Date & time</span>
@@ -125,11 +135,6 @@ function TimezoneConverter() {
               />
             </label>
           </div>
-          <datalist id="zone-list">
-            {zoneOptions.map((zone) => (
-              <option key={zone} value={zone} />
-            ))}
-          </datalist>
           <div className="action-row">
             <button className="button primary" type="submit" disabled={loading}>
               {loading ? 'Converting...' : 'Convert'}
