@@ -1,8 +1,12 @@
 from datetime import datetime as DateTime
+import io
+from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError, available_timezones
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
+from PIL import Image
 from pydantic import BaseModel, Field
 
 
@@ -41,6 +45,20 @@ TOOLS = [
         "description": "Live HTML, CSS, and JS preview.",
     },
 ]
+
+IMAGE_FORMATS = {
+    "png": "PNG",
+    "jpeg": "JPEG",
+    "jpg": "JPEG",
+    "webp": "WEBP",
+}
+
+IMAGE_MEDIA_TYPES = {
+    "png": "image/png",
+    "jpeg": "image/jpeg",
+    "jpg": "image/jpeg",
+    "webp": "image/webp",
+}
 
 
 @app.get("/api/health")
@@ -99,4 +117,39 @@ async def convert_timezone(payload: TimezoneConvertRequest) -> TimezoneConvertRe
         input_datetime=source_dt.isoformat(),
         output_datetime=target_dt.isoformat(),
         output_label=target_dt.strftime("%Y-%m-%d %H:%M %Z"),
+    )
+
+
+@app.post("/api/image/convert")
+async def convert_image(
+    file: UploadFile = File(...),
+    target_format: str = Form(...),
+) -> Response:
+    format_key = target_format.strip().lower()
+    if format_key not in IMAGE_FORMATS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported format: {target_format}. Use png, jpeg, or webp.",
+        )
+
+    try:
+        image = Image.open(file.file)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail="Invalid image file.") from exc
+
+    if IMAGE_FORMATS[format_key] == "JPEG" and image.mode in ("RGBA", "P"):
+        image = image.convert("RGB")
+
+    output = io.BytesIO()
+    image.save(output, format=IMAGE_FORMATS[format_key])
+    output.seek(0)
+
+    original_name = Path(file.filename or "image").stem
+    extension = "jpg" if format_key in ("jpeg", "jpg") else format_key
+    filename = f"{original_name}.{extension}"
+
+    return Response(
+        content=output.read(),
+        media_type=IMAGE_MEDIA_TYPES[format_key],
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
