@@ -11,8 +11,39 @@ Stack:
 - Backend: FastAPI
 - Frontend: React + Vite
 
-Repository layout (planned):
-- `apps/backend`
-- `apps/frontend`
+Repository layout:
+- `apps/backend` (FastAPI)
+- `apps/frontend` (React + Vite)
 
-Setup instructions will be added as the project is scaffolded.
+## Prerequisites
+- Python 3.12+
+- Node.js 20+
+
+## Backend (FastAPI)
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r apps/backend/requirements.txt
+uvicorn app.main:app --reload --app-dir apps/backend
+```
+
+Backend runs at `http://localhost:8000`.
+
+## Frontend (React + Vite)
+```bash
+cd apps/frontend
+npm install
+npm run dev
+```
+
+Frontend runs at `http://localhost:5173` and proxies `/api` to the backend.
+
+## Environment
+- `VITE_API_URL` (optional): override the API base URL. Defaults to Vite proxy.
+
+## API Endpoints (MVP)
+- `GET /api/health`
+- `GET /api/tools`
+- `GET /api/timezone/zones`
+- `POST /api/timezone/convert`
+- `POST /api/image/convert`
