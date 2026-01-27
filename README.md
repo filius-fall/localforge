@@ -16,15 +16,14 @@ Repository layout:
 - `apps/frontend` (React + Vite)
 
 ## Prerequisites
-- Python 3.12+
+- uv (Python package manager)
 - Node.js 20+
 
 ## Backend (FastAPI)
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r apps/backend/requirements.txt
-uvicorn app.main:app --reload --app-dir apps/backend
+cd apps/backend
+uv sync --group dev
+uv run fastapi dev
 ```
 
 Backend runs at `http://localhost:8000`.
@@ -37,6 +36,17 @@ npm run dev
 ```
 
 Frontend runs at `http://localhost:5173` and proxies `/api` to the backend.
+
+## Testing
+```bash
+# Backend
+cd apps/backend
+uv run pytest
+
+# Frontend
+cd apps/frontend
+npm test
+```
 
 ## Environment
 - `VITE_API_URL` (optional): override the API base URL. Defaults to Vite proxy.
