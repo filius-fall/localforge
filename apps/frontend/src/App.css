@@ -1,14 +1,18 @@
 .app {
   min-height: 100vh;
-  padding: 32px 24px 72px;
+  padding: 32px 16px 72px;
 }
 
 .app-shell {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 40px;
+}
+
+.app-shell:has(.tool-page) {
+  max-width: 1600px;
 }
 
 .app-header {
@@ -256,7 +260,7 @@
 }
 
 .tool-panel {
-  padding: 28px;
+  padding: 20px;
   border-radius: var(--radius);
   border: 1px dashed var(--border);
   background: var(--surface-subtle);
