@@ -15,4 +15,7 @@ Repository layout (planned):
 - `apps/backend`
 - `apps/frontend`
 
-Setup instructions will be added as the project is scaffolded.
+Quick start (backend):
+- `python3 -m venv .venv && source .venv/bin/activate`
+- `pip install -r apps/backend/requirements.txt`
+- `uvicorn app.main:app --reload --app-dir apps/backend`
