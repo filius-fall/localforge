@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Work+Sans:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&family=Work+Sans:wght@300;400;500;600&display=swap');
 
 :root {
   font-family: 'Work Sans', sans-serif;
@@ -20,6 +20,7 @@
   --border: rgba(17, 21, 34, 0.12);
   --shadow: 0 22px 60px rgba(17, 21, 34, 0.16);
   --radius: 20px;
+  --mono: 'JetBrains Mono', monospace;
 }
 
 * {
