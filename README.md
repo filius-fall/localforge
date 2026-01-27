@@ -2,10 +2,20 @@
 
 LocalForge is a multi-tool web app that hosts focused utilities in one place.
 
-Initial tools:
+Tools included:
 - Time zone converter
-- Image converter
+- Image toolkit (convert/resize/crop/watermark/strip EXIF)
 - HTML compiler (live preview)
+- PDF toolkit
+- File converter (DOCX/PDF/CSV/XLSX/Markdown)
+- Video & audio tools
+- Text utilities
+- QR generator
+- Network helpers
+- Code tools
+- Clipboard history
+- Timestamp tools
+- Notes & snippets
 
 Stack:
 - Backend: FastAPI
@@ -36,6 +46,29 @@ npm run dev
 ```
 
 Frontend runs at `http://localhost:5173` and proxies `/api` to the backend.
+
+## Docker (Ubuntu/RPi)
+This setup runs everything in containers with one command. Use the Docker v2 CLI:
+
+```bash
+docker compose up --build
+```
+
+Services:
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:8000`
+
+The backend container includes required system tools:
+- `ffmpeg` for audio/video operations
+- `libreoffice` for DOCX/PDF conversions
+- `pandoc` + `wkhtmltopdf` for Markdown → PDF
+- `ghostscript` for PDF optimization
+
+## Search Engine Indexing
+This app ships with no-index protections enabled:
+- `robots.txt` disallows all crawling
+- `X-Robots-Tag: noindex, nofollow` headers
+- `<meta name="robots" content="noindex, nofollow">`
 
 ## Testing
 ```bash
