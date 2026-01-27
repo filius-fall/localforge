@@ -59,3 +59,7 @@ dist-ssr/
 Thumbs.db
 .idea/
 .vscode/
+
+# Allow frontend lib directory
+!apps/frontend/src/lib/
+!apps/frontend/src/lib/**

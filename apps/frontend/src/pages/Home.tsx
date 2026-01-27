@@ -1,6 +1,15 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { getJson } from '../lib/api'
 
-const tools = [
+type Tool = {
+  slug: string
+  name: string
+  description: string
+  path: string
+}
+
+const fallbackTools: Tool[] = [
   {
     slug: 'timezone',
     name: 'Time Zone Converter',
@@ -22,6 +31,23 @@ const tools = [
 ]
 
 function Home() {
+  const [tools, setTools] = useState<Tool[]>(fallbackTools)
+
+  useEffect(() => {
+    let mounted = true
+    getJson<Tool[]>('/api/tools')
+      .then((data) => {
+        if (mounted && data.length > 0) {
+          setTools(data)
+        }
+      })
+      .catch(() => undefined)
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
   return (
     <section className="home">
       <div className="hero">
