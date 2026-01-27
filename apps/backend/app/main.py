@@ -549,8 +549,9 @@ async def pdf_to_docx(file: UploadFile = File(...)) -> Response:
             [
                 soffice,
                 "--headless",
+                "--infilter=writer_pdf_import",
                 "--convert-to",
-                "docx",
+                "docx:Office Open XML Text",
                 "--outdir",
                 tmp_dir,
                 str(input_path),

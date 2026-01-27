@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ghostscript \
     iputils-ping \
     libreoffice \
+    libreoffice-draw \
     libreoffice-writer \
     pandoc \
     wkhtmltopdf \

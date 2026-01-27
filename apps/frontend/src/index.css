@@ -4,29 +4,32 @@
   font-family: 'Work Sans', sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: #f1f5f9;
-  background-color: #0f172a;
+  color: #f8fafc;
+  background-color: #0b1020;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  --ink: #f1f5f9;
+  --ink: #f8fafc;
   --ink-muted: #cbd5e1;
-  --muted: #64748b;
-  --surface: rgba(30, 41, 59, 0.9);
-  --surface-strong: rgba(51, 65, 85, 0.95);
-  --surface-subtle: rgba(15, 23, 42, 0.8);
-  --accent: #3b82f6;
-  --accent-strong: #2563eb;
-  --accent-subtle: rgba(59, 130, 246, 0.15);
-  --accent-warm: #f59e0b;
-  --border: rgba(71, 85, 105, 0.5);
-  --border-strong: rgba(71, 85, 105, 0.7);
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
-  --radius: 12px;
-  --radius-lg: 16px;
+  --muted: #94a3b8;
+  --bg: #0b1020;
+  --surface: rgba(17, 24, 39, 0.92);
+  --surface-strong: rgba(22, 32, 52, 0.96);
+  --surface-subtle: rgba(12, 18, 33, 0.75);
+  --surface-glass: rgba(17, 24, 39, 0.6);
+  --accent: #38bdf8;
+  --accent-strong: #0ea5e9;
+  --accent-subtle: rgba(56, 189, 248, 0.16);
+  --accent-warm: #fbbf24;
+  --border: rgba(148, 163, 184, 0.16);
+  --border-strong: rgba(148, 163, 184, 0.3);
+  --shadow-sm: 0 1px 2px rgba(2, 6, 23, 0.4);
+  --shadow: 0 12px 30px rgba(2, 6, 23, 0.45);
+  --shadow-lg: 0 20px 55px rgba(2, 6, 23, 0.6);
+  --radius: 16px;
+  --radius-lg: 22px;
+  --radius-sm: 12px;
   --mono: 'JetBrains Mono', monospace;
 }
 
@@ -39,16 +42,21 @@
 body {
   min-height: 100vh;
   background: radial-gradient(
-      1000px 600px at 15% -10%,
-      rgba(59, 130, 246, 0.08),
-      rgba(59, 130, 246, 0) 70%
+      1200px 800px at 10% -15%,
+      rgba(56, 189, 248, 0.16),
+      rgba(56, 189, 248, 0) 65%
     ),
     radial-gradient(
-      800px 500px at 85% 0%,
-      rgba(139, 92, 246, 0.06),
-      rgba(139, 92, 246, 0) 65%
+      900px 700px at 85% 0%,
+      rgba(14, 165, 233, 0.12),
+      rgba(14, 165, 233, 0) 60%
     ),
-    #0f172a;
+    radial-gradient(
+      700px 500px at 50% 100%,
+      rgba(15, 23, 42, 0.6),
+      rgba(15, 23, 42, 0) 70%
+    ),
+    var(--bg);
   color: var(--ink);
 }
 

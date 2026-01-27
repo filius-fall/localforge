@@ -10,7 +10,7 @@ services:
     build:
       context: ./apps/frontend
     ports:
-      - "5173:80"
+      - "${LOCALFORGE_FRONTEND_PORT:-5173}:80"
     depends_on:
       - backend
     restart: unless-stopped
