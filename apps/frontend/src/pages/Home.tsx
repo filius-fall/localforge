@@ -58,6 +58,12 @@ const fallbackTools: Tool[] = [
     description: 'Extract dominant color palettes from images.',
     path: '/tools/palette-generator',
   },
+  {
+    slug: 'base-converter',
+    name: 'Base Converter',
+    description: 'Convert numbers between binary, octal, decimal, and hexadecimal.',
+    path: '/tools/base-converter',
+  },
 ]
 ]
 
