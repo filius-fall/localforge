@@ -178,6 +178,18 @@ TOOLS = [
         "description": "Pick colors and copy hex/rgb values.",
         "path": "/tools/color-picker",
     },
+    {
+        "slug": "mock-api",
+        "name": "Mock API Server",
+        "description": "Create and manage mock API responses.",
+        "path": "/tools/mock-api",
+    },
+    {
+        "slug": "data-generator",
+        "name": "Data Generator",
+        "description": "Generate fake profiles, addresses, and company data.",
+        "path": "/tools/data-generator",
+    },
 ]
 
 IMAGE_FORMATS = {

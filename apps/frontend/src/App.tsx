@@ -14,6 +14,9 @@ import TextUtilities from './pages/TextUtilities'
 import TimestampTools from './pages/TimestampTools'
 import TimezoneConverter from './pages/TimezoneConverter'
 import EmojiPicker from './pages/EmojiPicker'
+import ColorPicker from './pages/ColorPicker'
+import MockApiServer from './pages/MockApiServer'
+import DataGenerator from './pages/DataGenerator'
 import './App.css'
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -80,6 +83,12 @@ function App() {
             <NavLink to="/tools/color-picker" className={navLinkClass}>
               Color
             </NavLink>
+            <NavLink to="/tools/mock-api" className={navLinkClass}>
+              Mock API
+            </NavLink>
+            <NavLink to="/tools/data-generator" className={navLinkClass}>
+              Data Generator
+            </NavLink>
             <NavLink to="/tools/notes" className={navLinkClass}>
               Notes
             </NavLink>
@@ -102,7 +111,11 @@ function App() {
              <Route path="/tools/time" element={<TimestampTools />} />
              <Route path="/tools/notes" element={<NotesSnippets />} />
              <Route path="/tools/lorem" element={<LoremIpsumGenerator />} />
-          </Routes>
+             <Route path="/tools/emoji" element={<EmojiPicker />} />
+             <Route path="/tools/color-picker" element={<ColorPicker />} />
+             <Route path="/tools/mock-api" element={<MockApiServer />} />
+             <Route path="/tools/data-generator" element={<DataGenerator />} />
+           </Routes>
         </main>
       </div>
     </div>

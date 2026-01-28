@@ -11,6 +11,7 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@faker-js/faker": "^10.2.0",
     "cron-parser": "^4.9.0",
     "emoji-picker-react": "^4.17.1",
     "papaparse": "^5.4.1",
