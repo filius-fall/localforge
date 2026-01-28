@@ -70,8 +70,14 @@ dev: ## Start both backend and frontend locally
 	@$(MAKE) -j2 dev-backend dev-frontend
 
 dev-backend: ## Start backend only (FastAPI on port 8000)
-	@echo "$(BLUE)Starting backend...$(NC)"
-	@cd apps/backend && uv run fastapi dev
+	@echo "$(BLUE)Starting backend with environment variables...$(NC)"
+	@if [ -f .env ]; then \
+		$(eval echo $$(cat .env | sed 's/^/export /')) && cd apps/backend && uv run fastapi dev; \
+	else \
+		echo "$(RED)Error: .env file not found$(NC)"; \
+		echo "$(YELLOW)Run: cp .env.example .env$(NC)"; \
+		exit 1; \
+	fi
 
 dev-frontend: ## Start frontend only (Vite on port 5173)
 	@echo "$(BLUE)Starting frontend...$(NC)"
