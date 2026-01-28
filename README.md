@@ -66,6 +66,13 @@ npm test
 
 Required for `POST /api/decisions`. Creates markdown ADRs in a private GitHub repository.
 
+**Step 1: Create the private repository first**
+1. Go to https://github.com/new
+2. Repository name: `localforge-decisions`
+3. Make it **Private**
+4. Click **Create repository**
+
+**Step 2: Set environment variables**
 ```bash
 # Generate token with repo scope (recommended method)
 export GH_TOKEN=$(gh auth token)
@@ -77,6 +84,13 @@ export DECISION_LOG_BRANCH="main"  # Optional, defaults to main
 ```
 
 **Important**: The `GH_TOKEN` must have `repo` scope. Use `gh auth token --scopes repo` to verify.
+
+**Error troubleshooting**: If you see "Failed to check decision path on GitHub (status: 403)", verify:
+1. Token has `repo` scope
+2. Repository name is correct (`localforge-decisions`)
+3. Repository is private
+4. `DECISION_LOG_OWNER` matches your GitHub username
+
 
 ## Clipboard Notes
 
