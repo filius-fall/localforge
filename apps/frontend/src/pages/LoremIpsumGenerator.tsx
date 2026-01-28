@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { LoremIpsum } from 'lorem-ipsum'
+import { copyToClipboard } from '../lib/clipboard'
 
 function LoremIpsumGenerator() {
   const [paragraphs, setParagraphs] = useState(3)
@@ -7,6 +8,7 @@ function LoremIpsumGenerator() {
   const [wordsPerSentence, setWordsPerSentence] = useState(8)
   const [totalWords, setTotalWords] = useState('')
   const [output, setOutput] = useState('')
+  const [error, setError] = useState('')
 
   const generateLorem = () => {
     const lorem = new LoremIpsum({
@@ -22,11 +24,10 @@ function LoremIpsumGenerator() {
     setOutput(text)
   }
 
-  const copyToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(output)
-    } catch {
-      alert('Failed to copy to clipboard')
+  const handleCopy = async () => {
+    const success = await copyToClipboard(output, (msg) => setError(msg))
+    if (success) {
+      setTimeout(() => setError(''), 2000)
     }
   }
 
@@ -101,12 +102,13 @@ function LoremIpsumGenerator() {
           <button
             className="button ghost"
             type="button"
-            onClick={copyToClipboard}
+            onClick={handleCopy}
             disabled={!output}
           >
             Copy to Clipboard
           </button>
         </div>
+        {error && <p className="form-error">{error}</p>}
       </div>
     </section>
   )

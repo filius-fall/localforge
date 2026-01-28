@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import EmojiPickerWidget, { EmojiStyle } from 'emoji-picker-react'
 import type { EmojiClickData } from 'emoji-picker-react'
+import { copyToClipboard } from '../lib/clipboard'
 
 function EmojiPicker() {
   const [selectedEmojis, setSelectedEmojis] = useState<EmojiClickData[]>([])
   const [error, setError] = useState<string>('')
+  const [copied, setCopied] = useState<string>('')
 
   const addEmoji = (emojiData: EmojiClickData) => {
     if (selectedEmojis.some((e) => e.unified === emojiData.unified)) {
@@ -21,14 +23,15 @@ function EmojiPicker() {
     setSelectedEmojis(newSelection)
   }
 
-  const copyToClipboard = async () => {
+  const handleCopy = async () => {
     if (selectedEmojis.length === 0) return
 
-    try {
-      const emojiText = selectedEmojis.map((e) => e.emoji).join(' ')
-      await navigator.clipboard.writeText(emojiText)
-    } catch {
-      setError('Failed to copy to clipboard')
+    const emojiText = selectedEmojis.map((e) => e.emoji).join(' ')
+    const success = await copyToClipboard(emojiText, (msg) => setError(msg))
+
+    if (success) {
+      setCopied('Copied!')
+      setTimeout(() => setCopied(''), 2000)
     }
   }
 
@@ -71,13 +74,14 @@ function EmojiPicker() {
             </div>
           </div>
           {error && <p className="form-error">{error}</p>}
+          {copied && <p className="form-status">{copied}</p>}
         </div>
 
         <div className="tool-section">
           <button
             className="button primary"
             type="button"
-            onClick={copyToClipboard}
+            onClick={handleCopy}
             disabled={selectedEmojis.length === 0}
           >
             Copy All to Clipboard

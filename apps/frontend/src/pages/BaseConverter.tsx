@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { copyToClipboard as copyTextToClipboard } from '../lib/clipboard'
 
 const BASES = [
   { value: 2, label: 'Binary (2)' },
@@ -57,31 +58,25 @@ function BaseConverter() {
     setInputBase(outputBase)
     setOutputBase(temp)
 
-    // Also swap input/output if we have valid values
-    if (output && isValidForBase(output, outputBase)) {
+    if (input && output && isValidForBase(input, outputBase)) {
       setInput(output)
-      setOutput(input)
+      const decimalValue = parseInt(output, outputBase)
+      setOutput(decimalValue.toString(inputBase).toUpperCase())
     }
   }
 
-  const copyToClipboard = async () => {
+  const handleCopy = async () => {
     if (!output) return
 
-    try {
-      await navigator.clipboard.writeText(output)
-    } catch {
-      setError('Failed to copy to clipboard')
+    const success = await copyTextToClipboard(output, (msg) => setError(msg))
+    if (success) {
+      setTimeout(() => setError(''), 2000)
     }
   }
 
   const clearAll = () => {
     setInput('')
     setOutput('')
-    setError('')
-  }
-
-  const handleInputChange = (value: string) => {
-    setInput(value)
     setError('')
   }
 
@@ -182,10 +177,10 @@ function BaseConverter() {
               <button
                 className="icon-button"
                 type="button"
-                onClick={copyToClipboard}
+                onClick={handleCopy}
                 title="Copy to clipboard"
               >
-                📋 Copy
+                Copy
               </button>
             </div>
           </div>

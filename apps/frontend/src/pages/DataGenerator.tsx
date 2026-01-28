@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { faker } from '@faker-js/faker'
+import { copyToClipboard } from '../lib/clipboard'
 
 interface FakeProfile {
   id: string
@@ -42,28 +43,15 @@ function DataGenerator() {
     }
   }
 
-  const copyToClipboard = async (item: FakeProfile) => {
-    try {
-      const text = Object.entries(item)
-        .map(([key, value]) => `${key}: ${value}`)
-        .join('\n')
-      await navigator.clipboard.writeText(text)
-    } catch {
-      setError('Failed to copy to clipboard')
+  const handleCopy = async (text: string) => {
+    const success = await copyToClipboard(text, (msg) => setError(msg))
+    if (!success) {
+      return
     }
-  }
 
-  const copyAllToClipboard = async () => {
-    try {
-      const text = data
-        .map((item, index) => `--- Profile ${index + 1} ---\n${Object.entries(item)
-          .map(([key, value]) => `${key}: ${value}`)
-          .join('\n')}`)
-        .join('\n\n')
-      await navigator.clipboard.writeText(text)
-    } catch {
-      setError('Failed to copy to clipboard')
-    }
+    const successMessage = 'Copied to clipboard!'
+    setError(successMessage)
+    setTimeout(() => setError(''), 2000)
   }
 
   const clearData = () => {
@@ -124,7 +112,9 @@ function DataGenerator() {
                       <button
                         className="icon-button"
                         type="button"
-                        onClick={() => copyToClipboard(item)}
+                        onClick={() => handleCopy(
+                          `Name: ${item.name}\nEmail: ${item.email}\nPhone: ${item.phone}\nAddress: ${item.address}\nCity, State, Zip: ${item.city}, ${item.state} ${item.zip}\nCountry: ${item.country}\nCompany: ${item.company}\nJob Title: ${item.jobTitle}`
+                        )}
                         title="Copy to clipboard"
                       >
                         📋
@@ -175,7 +165,12 @@ function DataGenerator() {
               <button
                 className="button primary"
                 type="button"
-                onClick={copyAllToClipboard}
+                onClick={async () => {
+                  const allText = data.map((item, index) =>
+                    `--- Profile ${index + 1} ---\n${item.name}\n${item.email}\n${item.phone}\n${item.address}\n${item.city}, ${item.state} ${item.zip}\n${item.country}\n${item.company}\n${item.jobTitle}`
+                  ).join('\n\n')
+                  await handleCopy(allText)
+                }}
               >
                 Copy All to Clipboard
               </button>

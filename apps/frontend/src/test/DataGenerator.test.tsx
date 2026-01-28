@@ -152,7 +152,7 @@ describe('DataGenerator', () => {
       fireEvent.click(copyAllButton)
 
       waitFor(() => {
-        const error = screen.getByText('Failed to copy to clipboard')
+        const error = screen.getByText('Clipboard unavailable. Use HTTPS or localhost.')
         expect(error).toBeInTheDocument()
         expect(error).toHaveClass('form-error')
       })

@@ -1,5 +1,6 @@
 from datetime import datetime as DateTime
 import io
+from typing import Iterable, cast
 import logging
 import re
 import shutil
@@ -21,6 +22,8 @@ from PIL import Image, ImageDraw, ImageFont
 from pydantic import BaseModel, Field
 from pypdf import PdfReader, PdfWriter
 
+from app.decision_logger import router as decision_logger_router
+
 
 logger = logging.getLogger("localforge")
 if not logger.handlers:
@@ -32,6 +35,7 @@ logger.setLevel(logging.INFO)
 
 
 app = FastAPI(title="LocalForge API", version="0.2.0")
+app.include_router(decision_logger_router)
 
 
 @app.middleware("http")
@@ -813,8 +817,9 @@ async def strip_exif(
     except Exception as exc:
         raise HTTPException(status_code=400, detail="Invalid image file.") from exc
 
+    data = cast(Iterable, image.getdata())
     clean = Image.new(image.mode, image.size)
-    clean.putdata(list(image.getdata()))
+    clean.putdata(list(data))
     if IMAGE_FORMATS[format_key] == "JPEG" and clean.mode in ("RGBA", "P"):
         clean = clean.convert("RGB")
 

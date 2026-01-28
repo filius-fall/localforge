@@ -1,57 +1,54 @@
 import { useEffect, useState } from 'react'
+import { readFromClipboard } from '../lib/clipboard'
 
 type ClipboardEntry = {
-  id: string
-  text: string
-  createdAt: string
+   id: string
+   text: string
+   createdAt: string
 }
 
 const STORAGE_KEY = 'localforge_clipboard'
 
 const loadEntries = (): ClipboardEntry[] => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? (JSON.parse(raw) as ClipboardEntry[]) : []
-  } catch {
-    return []
-  }
+   try {
+     const raw = localStorage.getItem(STORAGE_KEY)
+     return raw ? (JSON.parse(raw) as ClipboardEntry[]) : []
+   } catch {
+     return []
+   }
 }
 
 const saveEntries = (entries: ClipboardEntry[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries))
+   localStorage.setItem(STORAGE_KEY, JSON.stringify(entries))
 }
 
 function ClipboardHistory() {
-  const [entries, setEntries] = useState<ClipboardEntry[]>([])
-  const [manualText, setManualText] = useState('')
-  const [error, setError] = useState<string | null>(null)
+   const [entries, setEntries] = useState<ClipboardEntry[]>([])
+   const [manualText, setManualText] = useState('')
+   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    setEntries(loadEntries())
-  }, [])
+   useEffect(() => {
+     setEntries(loadEntries())
+   }, [])
 
-  const addEntry = (text: string) => {
-    const entry = {
-      id: crypto.randomUUID(),
-      text,
-      createdAt: new Date().toISOString(),
-    }
-    const next = [entry, ...entries].slice(0, 50)
-    setEntries(next)
-    saveEntries(next)
-  }
+   const addEntry = (text: string) => {
+     const entry = {
+       id: crypto.randomUUID(),
+       text,
+       createdAt: new Date().toISOString(),
+     }
+     const next = [entry, ...entries].slice(0, 50)
+     setEntries(next)
+     saveEntries(next)
+   }
 
-  const handleReadClipboard = async () => {
-    setError(null)
-    try {
-      const text = await navigator.clipboard.readText()
-      if (text.trim()) {
-        addEntry(text)
-      }
-    } catch {
-      setError('Clipboard permission denied.')
-    }
-  }
+   const handleReadClipboard = async () => {
+     setError(null)
+     const text = await readFromClipboard((msg) => setError(msg))
+     if (text && text.trim()) {
+       addEntry(text)
+     }
+   }
 
   const handleAddManual = () => {
     if (!manualText.trim()) {

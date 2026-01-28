@@ -1,87 +1,66 @@
 import { useState } from 'react'
+import { copyToClipboard } from '../lib/clipboard'
+
+const normalizeHex = (value: string) => value.replace('#', '').trim()
+
+const isValidHex = (hex: string) => /^[0-9a-fA-F]{3}$|^[0-9a-fA-F]{6}$/.test(hex)
+
+const hexToRgb = (hex: string) => {
+  const cleanHex = normalizeHex(hex)
+  const expanded = cleanHex.length === 3
+    ? cleanHex.split('').map((char) => char + char).join('')
+    : cleanHex
+
+  const r = parseInt(expanded.slice(0, 2), 16)
+  const g = parseInt(expanded.slice(2, 4), 16)
+  const b = parseInt(expanded.slice(4, 6), 16)
+
+  return `rgb(${r}, ${g}, ${b})`
+}
+
+const isValidRgb = (rgb: string) => {
+  const match = rgb.match(/^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(\s*,\s*[\d.]+)?\s*\)$/)
+  if (!match) return false
+
+  const r = Number(match[1])
+  const g = Number(match[2])
+  const b = Number(match[3])
+
+  return r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255
+}
+
+const rgbToHex = (rgb: string) => {
+  const match = rgb.match(/\d+/g)
+  if (!match || match.length < 3) return '#000000'
+
+  const toHex = (value: string) => Number(value).toString(16).padStart(2, '0')
+  return `#${toHex(match[0])}${toHex(match[1])}${toHex(match[2])}`.toUpperCase()
+}
 
 function ColorConverter() {
-  const [hexInput, setHexInput] = useState<string>('')
-  const [rgbInput, setRgbInput] = useState<string>('')
-  const [hexOutput, setHexOutput] = useState<string>('')
-  const [rgbOutput, setRgbOutput] = useState<string>('')
-  const [error, setError] = useState<string>('')
-
-  const isValidHex = (hex: string): boolean => {
-    const hexRegex = /^#?([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/
-    return hexRegex.test(hex)
-  }
-
-  const isValidRgb = (rgb: string): boolean => {
-    const rgbRegex = /^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(\s*,\s*[\d.]+)?\s*\)$/
-    const match = rgb.match(rgbRegex)
-    if (!match) return false
-
-    const r = parseInt(match[1])
-    const g = parseInt(match[2])
-    const b = parseInt(match[3])
-
-    return (
-      r >= 0 && r <= 255 &&
-      g >= 0 && g <= 255 &&
-      b >= 0 && b <= 255
-    )
-  }
-
-  const hexToRgb = (hex: string): string => {
-    const cleanHex = hex.replace('#', '')
-
-    let r: number, g: number, b: number
-
-    if (cleanHex.length === 3) {
-      r = parseInt(cleanHex[0] + cleanHex[0], 16)
-      g = parseInt(cleanHex[1] + cleanHex[1], 16)
-      b = parseInt(cleanHex[2] + cleanHex[2], 16)
-    } else {
-      r = parseInt(cleanHex.substring(0, 2), 16)
-      g = parseInt(cleanHex.substring(2, 4), 16)
-      b = parseInt(cleanHex.substring(4, 6), 16)
-    }
-
-    return `rgb(${r}, ${g}, ${b})`
-  }
-
-  const rgbToHex = (rgb: string): string => {
-    const rgbRegex = /^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(\s*,\s*[\d.]+)?\s*\)$/
-    const match = rgb.match(rgbRegex)
-
-    if (!match) {
-      return '#000000'
-    }
-
-    const r = parseInt(match[1]).toString(16).padStart(2, '0')
-    const g = parseInt(match[2]).toString(16).padStart(2, '0')
-    const b = parseInt(match[3]).toString(16).padStart(2, '0')
-
-    return `#${r}${g}${b}`.toUpperCase()
-  }
+  const [hexInput, setHexInput] = useState('')
+  const [rgbInput, setRgbInput] = useState('')
+  const [hexOutput, setHexOutput] = useState('')
+  const [rgbOutput, setRgbOutput] = useState('')
+  const [error, setError] = useState('')
+  const [copied, setCopied] = useState('')
 
   const convertHexToRgb = () => {
     setError('')
 
-    if (!hexInput.trim()) {
+    const normalized = normalizeHex(hexInput)
+    if (!normalized) {
       setRgbOutput('')
       return
     }
 
-    if (!isValidHex(hexInput)) {
+    if (!isValidHex(normalized)) {
       setError('Invalid hex color. Use #RRGGBB or #RGB format.')
       setRgbOutput('')
       return
     }
 
-    try {
-      const rgb = hexToRgb(hexInput)
-      setRgbOutput(rgb)
-    } catch {
-      setError('Conversion failed')
-      setRgbOutput('')
-    }
+    setRgbOutput(hexToRgb(normalized))
   }
 
   const convertRgbToHex = () => {
@@ -98,22 +77,24 @@ function ColorConverter() {
       return
     }
 
-    try {
-      const hex = rgbToHex(rgbInput)
-      setHexOutput(hex)
-    } catch {
-      setError('Conversion failed')
-      setHexOutput('')
+    setHexOutput(rgbToHex(rgbInput))
+  }
+
+  const copyHex = async () => {
+    if (!hexOutput) return
+    const success = await copyToClipboard(hexOutput, (msg) => setError(msg))
+    if (success) {
+      setCopied('Copied!')
+      setTimeout(() => setCopied(''), 2000)
     }
   }
 
-  const copyToClipboard = async (text: string) => {
-    if (!text) return
-
-    try {
-      await navigator.clipboard.writeText(text)
-    } catch {
-      setError('Failed to copy to clipboard')
+  const copyRgb = async () => {
+    if (!rgbOutput) return
+    const success = await copyToClipboard(rgbOutput, (msg) => setError(msg))
+    if (success) {
+      setCopied('Copied!')
+      setTimeout(() => setCopied(''), 2000)
     }
   }
 
@@ -144,16 +125,14 @@ function ColorConverter() {
               <input
                 id="hex-input"
                 type="text"
-                value={hexInput.replace('#', '')}
+                value={normalizeHex(hexInput)}
                 onChange={(e) => setHexInput(e.target.value)}
                 placeholder="RRGGBB or RGB"
                 className="input"
                 maxLength={6}
               />
             </div>
-            <p className="form-hint">
-              Examples: FF0000, F00, 00FF00
-            </p>
+            <p className="form-hint">Examples: FF0000, F00, 00FF00</p>
           </div>
 
           <button
@@ -168,17 +147,9 @@ function ColorConverter() {
           {rgbOutput && (
             <div className="result-display">
               <div className="result-value">{rgbOutput}</div>
-              <div
-                className="color-preview"
-                style={{ backgroundColor: rgbOutput }}
-              />
-              <button
-                className="icon-button"
-                type="button"
-                onClick={() => copyToClipboard(rgbOutput)}
-                title="Copy to clipboard"
-              >
-                📋 Copy
+              <div className="color-preview" style={{ backgroundColor: rgbOutput }} />
+              <button className="icon-button" type="button" onClick={copyRgb} title="Copy to clipboard">
+                Copy
               </button>
             </div>
           )}
@@ -196,9 +167,7 @@ function ColorConverter() {
               placeholder="rgb(r, g, b) or rgba(r, g, b, a)"
               className="input"
             />
-            <p className="form-hint">
-              Examples: rgb(255, 0, 0), rgba(255, 0, 0, 0.5)
-            </p>
+            <p className="form-hint">Examples: rgb(255, 0, 0), rgba(255, 0, 0, 0.5)</p>
           </div>
 
           <button
@@ -213,17 +182,9 @@ function ColorConverter() {
           {hexOutput && (
             <div className="result-display">
               <div className="result-value">{hexOutput}</div>
-              <div
-                className="color-preview"
-                style={{ backgroundColor: hexOutput }}
-              />
-              <button
-                className="icon-button"
-                type="button"
-                onClick={() => copyToClipboard(hexOutput)}
-                title="Copy to clipboard"
-              >
-                📋 Copy
+              <div className="color-preview" style={{ backgroundColor: hexOutput }} />
+              <button className="icon-button" type="button" onClick={copyHex} title="Copy to clipboard">
+                Copy
               </button>
             </div>
           )}
@@ -231,17 +192,14 @@ function ColorConverter() {
 
         {(hexOutput || rgbOutput) && (
           <div className="tool-section">
-            <button
-              className="button secondary"
-              type="button"
-              onClick={clearAll}
-            >
+            <button className="button secondary" type="button" onClick={clearAll}>
               Clear All
             </button>
           </div>
         )}
 
         {error && <p className="form-error">{error}</p>}
+        {copied && <p className="form-status">{copied}</p>}
       </div>
     </section>
   )

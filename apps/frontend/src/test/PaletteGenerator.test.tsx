@@ -44,17 +44,17 @@ describe('PaletteGenerator', () => {
       value: [file],
     })
 
-    // Mock FileReader
+     // Mock FileReader
     const mockFileReader = {
       readAsDataURL: vi.fn(),
       result: 'data:image/png;base64,test',
       onload: null as any,
     } as any
-
+    
     global.FileReader = vi.fn(() => mockFileReader) as any
-
+    
     fireEvent.change(fileInput)
-
+    
     // Trigger the onload event
     setTimeout(() => {
       if (mockFileReader.onload) {

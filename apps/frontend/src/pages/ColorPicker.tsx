@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { HexColorPicker } from 'react-colorful'
+import { copyToClipboard } from '../lib/clipboard'
 
 type RgbColor = {
   r: number
@@ -39,6 +40,7 @@ function ColorPicker() {
   const [hex, setHex] = useState('#00ff00')
   const [rgb, setRgb] = useState<RgbColor>({ r: 0, g: 255, b: 0 })
   const [error, setError] = useState<string>('')
+  const [copied, setCopied] = useState<string>('')
 
   const handleHexChange = (value: string) => {
     const nextHex = value.startsWith('#') ? value : `#${value}`
@@ -67,11 +69,20 @@ function ColorPicker() {
     setError('')
   }
 
-  const copyToClipboard = async (value: string) => {
-    try {
-      await navigator.clipboard.writeText(value)
-    } catch {
-      setError('Failed to copy to clipboard')
+  const handleCopyHex = async () => {
+    const success = await copyToClipboard(hex, (msg) => setError(msg))
+    if (success) {
+      setCopied('Copied!')
+      setTimeout(() => setCopied(''), 2000)
+    }
+  }
+
+  const handleCopyRgb = async () => {
+    const rgbText = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`
+    const success = await copyToClipboard(rgbText, (msg) => setError(msg))
+    if (success) {
+      setCopied('Copied!')
+      setTimeout(() => setCopied(''), 2000)
     }
   }
 
@@ -106,6 +117,15 @@ function ColorPicker() {
             <p className="preview-label">RGB Value</p>
             <pre>{`rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`}</pre>
           </div>
+
+          <button
+            className="button primary"
+            type="button"
+            onClick={handleCopyHex}
+            disabled={!hex}
+          >
+            Copy Hex
+          </button>
         </div>
 
         <div className="tool-section">
@@ -157,13 +177,15 @@ function ColorPicker() {
           <button
             className="button primary"
             type="button"
-            onClick={() => copyToClipboard(hex)}
+            onClick={handleCopyRgb}
+            disabled={!hex}
           >
-            Copy Hex
+            Copy RGB
           </button>
         </div>
 
         {error && <p className="form-error">{error}</p>}
+        {copied && <p className="form-status">{copied}</p>}
       </div>
     </section>
   )
