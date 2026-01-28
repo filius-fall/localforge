@@ -2,53 +2,29 @@
 
 LocalForge is a multi-tool web app that hosts focused utilities in one place.
 
-Tools included:
-- Time zone converter
-- Image toolkit (convert/resize/crop/watermark/strip EXIF)
-- HTML compiler (live preview)
-- PDF toolkit
-- File converter (DOCX/PDF/CSV/XLSX/Markdown)
-- Video & audio tools
-- Text utilities
-- QR generator
-- Network helpers
-- Code tools
-- Clipboard history
-- Timestamp tools
-- Notes & snippets
+## How to Run
 
-Stack:
-- Backend: FastAPI
-- Frontend: React + Vite
+### Option 1: Development Mode (Separate Backend and Frontend)
 
-Repository layout:
-- `apps/backend` (FastAPI)
-- `apps/frontend` (React + Vite)
-
-## Prerequisites
-- uv (Python package manager)
-- Node.js 20+
-
-## Backend (FastAPI)
+**Backend (FastAPI):**
 ```bash
 cd apps/backend
 uv sync --group dev
 uv run fastapi dev
 ```
-
 Backend runs at `http://localhost:8000`.
 
-## Frontend (React + Vite)
+**Frontend (React + Vite):**
 ```bash
 cd apps/frontend
 npm install
 npm run dev
 ```
-
 Frontend runs at `http://localhost:5173` and proxies `/api` to the backend.
 
-## Docker (Ubuntu/RPi)
-This setup runs everything in containers with one command. Use the Docker v2 CLI:
+### Option 2: Docker (All-in-One)
+
+Use Docker Compose to run everything in containers with one command:
 
 ```bash
 docker compose up --build
@@ -63,6 +39,10 @@ The backend container includes required system tools:
 - `libreoffice` for DOCX/PDF conversions
 - `pandoc` + `wkhtmltopdf` for Markdown → PDF
 - `ghostscript` for PDF optimization
+
+## Repository layout
+- `apps/backend` (FastAPI)
+- `apps/frontend` (React + Vite)
 
 ## Search Engine Indexing
 This app ships with no-index protections enabled:
