@@ -13,6 +13,7 @@ import QrGenerator from './pages/QrGenerator'
 import TextUtilities from './pages/TextUtilities'
 import TimestampTools from './pages/TimestampTools'
 import TimezoneConverter from './pages/TimezoneConverter'
+import LoremIpsumGenerator from './pages/LoremIpsumGenerator'
 import './App.css'
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -70,6 +71,9 @@ function App() {
             <NavLink to="/tools/time" className={navLinkClass}>
               Time
             </NavLink>
+            <NavLink to="/tools/lorem" className={navLinkClass}>
+              Lorem
+            </NavLink>
             <NavLink to="/tools/notes" className={navLinkClass}>
               Notes
             </NavLink>
@@ -78,19 +82,20 @@ function App() {
         <main className="app-main">
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/tools/timezone" element={<TimezoneConverter />} />
-            <Route path="/tools/image" element={<ImageConverter />} />
-            <Route path="/tools/html" element={<HtmlCompiler />} />
-            <Route path="/tools/pdf" element={<PdfToolkit />} />
-            <Route path="/tools/convert" element={<FileConverter />} />
-            <Route path="/tools/media" element={<MediaToolkit />} />
-            <Route path="/tools/text" element={<TextUtilities />} />
-            <Route path="/tools/qr" element={<QrGenerator />} />
-            <Route path="/tools/network" element={<NetworkTools />} />
-            <Route path="/tools/code" element={<CodeTools />} />
-            <Route path="/tools/clipboard" element={<ClipboardHistory />} />
-            <Route path="/tools/time" element={<TimestampTools />} />
-            <Route path="/tools/notes" element={<NotesSnippets />} />
+             <Route path="/tools/timezone" element={<TimezoneConverter />} />
+             <Route path="/tools/image" element={<ImageConverter />} />
+             <Route path="/tools/html" element={<HtmlCompiler />} />
+             <Route path="/tools/pdf" element={<PdfToolkit />} />
+             <Route path="/tools/convert" element={<FileConverter />} />
+             <Route path="/tools/media" element={<MediaToolkit />} />
+             <Route path="/tools/text" element={<TextUtilities />} />
+             <Route path="/tools/qr" element={<QrGenerator />} />
+             <Route path="/tools/network" element={<NetworkTools />} />
+             <Route path="/tools/code" element={<CodeTools />} />
+             <Route path="/tools/clipboard" element={<ClipboardHistory />} />
+             <Route path="/tools/time" element={<TimestampTools />} />
+             <Route path="/tools/notes" element={<NotesSnippets />} />
+             <Route path="/tools/lorem" element={<LoremIpsumGenerator />} />
           </Routes>
         </main>
       </div>
