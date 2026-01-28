@@ -1,18 +1,17 @@
 import { useState } from 'react'
-import EmojiPicker, { EmojiClickData, EmojiStyle } from 'emoji-picker-react'
+import EmojiPickerWidget, { EmojiStyle } from 'emoji-picker-react'
+import type { EmojiClickData } from 'emoji-picker-react'
 
 function EmojiPicker() {
-  const [selectedEmojis, setSelectedEmojis] = useState<string[]>([])
-  const [emoji, setEmoji] = useState<EmojiClickData | null>(null)
+  const [selectedEmojis, setSelectedEmojis] = useState<EmojiClickData[]>([])
   const [error, setError] = useState<string>('')
 
   const addEmoji = (emojiData: EmojiClickData) => {
-    if (selectedEmojis.some(e => e.unified === emoji.unified)) {
+    if (selectedEmojis.some((e) => e.unified === emojiData.unified)) {
       setError('Emoji already selected')
       return
     }
-    setSelectedEmojis([...selectedEmojis, emojiData])
-    setEmoji(emojiData)
+    setSelectedEmojis((prev) => [...prev, emojiData])
     setError('')
   }
 
@@ -20,14 +19,13 @@ function EmojiPicker() {
     const newSelection = [...selectedEmojis]
     newSelection.splice(index, 1)
     setSelectedEmojis(newSelection)
-    setEmoji(newSelection.length > 0 ? newSelection[0] : null)
   }
 
   const copyToClipboard = async () => {
     if (selectedEmojis.length === 0) return
 
     try {
-      const emojiText = selectedEmojis.map(e => e.native).join(' ')
+      const emojiText = selectedEmojis.map((e) => e.emoji).join(' ')
       await navigator.clipboard.writeText(emojiText)
     } catch {
       setError('Failed to copy to clipboard')
@@ -46,12 +44,12 @@ function EmojiPicker() {
       <div className="tool-panel">
         <div className="tool-section">
           <div className="emoji-picker-wrapper">
-            <EmojiPicker
+            <EmojiPickerWidget
               onEmojiClick={addEmoji}
-              emojiStyle={{ fontSize: '24px' }}
+              emojiStyle={EmojiStyle.NATIVE}
+              emojiVersion="14.0"
               previewConfig={{
                 showPreview: true,
-                emojiVersion: '14.0',
               }}
             />
           </div>
@@ -60,7 +58,7 @@ function EmojiPicker() {
             <div className="emoji-list">
               {selectedEmojis.map((e, index) => (
                 <div key={e.unified} className="emoji-item">
-                  <span className="emoji-char">{e.native}</span>
+                  <span className="emoji-char">{e.emoji}</span>
                   <button
                     className="emoji-remove"
                     type="button"

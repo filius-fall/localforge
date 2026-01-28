@@ -1,189 +1,216 @@
-# Mock API Server Frontend Page
-
 import { useState } from 'react'
-import { getJson } from '../../lib/api'
+import { apiUrl, getJson } from '../lib/api'
 
-interface MockRoute {
+type MockRoute = {
+  id: string
   method: string
   path: string
   status: number
   headers: Record<string, string>
-  body: any
+  body: unknown
   delayMs: number
   enabled: boolean
   createdAt: string
   updatedAt: string
 }
 
+type MockRouteApi = {
+  id: string
+  method: string
+  path: string
+  status: number
+  headers: Record<string, string>
+  body: unknown
+  delay_ms: number
+  enabled: boolean
+  created_at: string
+  updated_at: string
+}
+
+type MockRouteResponse = {
+  route: MockRouteApi
+}
+
+type MockRoutesResponse = {
+  routes: MockRouteApi[]
+}
+
+type RouteForm = {
+  method: string
+  path: string
+  status: number
+  headers: string
+  body: string
+  delayMs: number
+  enabled: boolean
+}
+
+const normalizeRoute = (route: MockRouteApi): MockRoute => ({
+  id: route.id,
+  method: route.method,
+  path: route.path,
+  status: route.status,
+  headers: route.headers ?? {},
+  body: route.body ?? null,
+  delayMs: route.delay_ms ?? 0,
+  enabled: route.enabled ?? true,
+  createdAt: route.created_at ?? '',
+  updatedAt: route.updated_at ?? '',
+})
+
+const defaultForm: RouteForm = {
+  method: 'GET',
+  path: '',
+  status: 200,
+  headers: '{"Content-Type": "application/json"}',
+  body: '',
+  delayMs: 0,
+  enabled: true,
+}
+
 function MockApiServer() {
   const [routes, setRoutes] = useState<MockRoute[]>([])
-  const [newRoute, setNewRoute] = useState<Partial<MockRoute>>({
-    method: 'GET',
-    path: '',
-    status: 200,
-    headers: {},
-    body: null,
-    delayMs: 0,
-    enabled: true,
-    createdAt: '',
-    updatedAt: '',
-  })
+  const [form, setForm] = useState<RouteForm>(defaultForm)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [error, setError] = useState<string>('')
 
-  const loadRoutes = () => {
-    getJson<MockRoute[]>('/api/mock/routes')
-      .then((data) => {
-        setRoutes(data.routes || [])
-        setError('')
-      })
-      .catch(() => {
-        setError('Failed to load mock routes')
-      })
-  }
-
-  const validateRoute = (route: Partial<MockRoute>) => {
-    if (!route.path.startsWith('/') || route.path.startsWith('/api') || route.path.startsWith('/mock')) {
-      return { isValid: false, error: 'Path must start with / and cannot be /api or /mock' }
-    }
-    
-    const isValid = route.status === 200 && route.status <= 599
-      && (!route.delayMs || route.delayMs === 0)
-      && (!route.body || route.headers.get('Content-Type', '').toLowerCase() === 'application/json' || route.body === null || len(JSON.stringify(route.body || '')) <= 524288)
-    
-    return { isValid: true }
-  }
-
-  const handleCreate = () => {
-    const route = {
-      method: newRoute.method,
-      path: newRoute.path,
-      status: newRoute.status,
-      headers: newRoute.headers,
-      body: newRoute.body,
-      delayMs: newRoute.delayMs,
-      enabled: newRoute.enabled,
-      created_at: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-
-    if (!validateRoute(route)) {
-      setError(route.error || 'Invalid route configuration')
-      return
-    }
-
+  const loadRoutes = async () => {
     try {
-      const response = await getJson<Response>('/api/mock/routes', {
-        method: 'POST',
-        body: JSON.stringify(route),
-      })
-
-      if (!response.ok) {
-        setError('Failed to create route')
-        return
-      }
-
-      const data = await response.json()
-      setRoutes([...routes, { ...data, 'id': response.id, ...route }])
-      setNewRoute({
-        method: 'GET',
-        path: '',
-        status: 200,
-        headers: {},
-        body: null,
-        delayMs: 0,
-        enabled: true,
-        createdAt: '',
-        updatedAt: '',
-      })
+      const data = await getJson<MockRoutesResponse>('/api/mock/routes')
+      const normalized = (data.routes ?? []).map(normalizeRoute)
+      setRoutes(normalized)
       setError('')
-
-      logger.info('mock.route.created id=%s', response.id)
-    } catch (err) {
-      setError(err.message)
+    } catch {
+      setError('Failed to load mock routes')
     }
   }
 
-  const handleUpdate = async (id: string, updates: Partial<MockRoute>) => {
-    const route = routes.find((r) => r.id === id)
-    
-    if (!route) {
-      setError('Route not found')
+  const validateForm = (nextForm: RouteForm): string | null => {
+    if (!nextForm.path.startsWith('/') || nextForm.path.startsWith('/api') || nextForm.path.startsWith('/mock')) {
+      return 'Path must start with / and cannot be /api or /mock'
+    }
+    if (nextForm.status < 200 || nextForm.status > 599) {
+      return 'Status must be between 200 and 599'
+    }
+    if (nextForm.delayMs < 0 || nextForm.delayMs > 10000) {
+      return 'Delay must be between 0 and 10000ms'
+    }
+    return null
+  }
+
+  const parseJsonField = (value: string, fallback: unknown, label: string) => {
+    if (!value.trim()) {
+      return fallback
+    }
+    try {
+      return JSON.parse(value)
+    } catch {
+      throw new Error(`${label} must be valid JSON`)
+    }
+  }
+
+  const buildPayload = (nextForm: RouteForm) => {
+    const headers = parseJsonField(nextForm.headers, {}, 'Headers') as Record<string, string>
+    const body = parseJsonField(nextForm.body, null, 'Body')
+    return {
+      method: nextForm.method,
+      path: nextForm.path,
+      status: nextForm.status,
+      headers,
+      body,
+      delay_ms: nextForm.delayMs,
+      enabled: nextForm.enabled,
+    }
+  }
+
+  const resetForm = () => {
+    setForm(defaultForm)
+    setEditingId(null)
+  }
+
+  const handleSubmit = async () => {
+    setError('')
+
+    const validationError = validateForm(form)
+    if (validationError) {
+      setError(validationError)
       return
     }
 
-    if (!validateRoute(updates)) {
-      setError(updates.error || 'Invalid route configuration')
+    let payload
+    try {
+      payload = buildPayload(form)
+    } catch (err) {
+      setError((err as Error).message)
       return
-    }
-
-    const updatedRoute = {
-      ...route,
-      id: route.id,
-      status: updates.status || route.status,
-      headers: updates.headers || route.headers,
-      body: updates.body || route.body,
-      delayMs: updates.delayMs || route.delayMs,
-      enabled: updates.enabled !== undefined ? updates.enabled : route.enabled,
-      updatedAt: new Date().toISOString(),
     }
 
     try {
-      const response = await getJson<Response>(`/api/mock/routes/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(updates),
-      })
-
-      if (!response.ok) {
-        setError(`Failed to update route: ${response.status}`)
-        return
+      if (editingId) {
+        const response = await fetch(apiUrl(`/api/mock/routes/${editingId}`), {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...payload, id: editingId }),
+        })
+        if (!response.ok) {
+          setError(`Failed to update route: ${response.status}`)
+          return
+        }
+        const data = (await response.json()) as MockRouteResponse
+        const updated = normalizeRoute(data.route)
+        setRoutes((prev) => prev.map((route) => (route.id === updated.id ? updated : route)))
+      } else {
+        const response = await fetch(apiUrl('/api/mock/routes'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        if (!response.ok) {
+          setError(`Failed to create route: ${response.status}`)
+          return
+        }
+        const data = (await response.json()) as MockRouteResponse
+        const created = normalizeRoute(data.route)
+        setRoutes((prev) => [created, ...prev])
       }
 
-      const data = await response.json()
-      const updatedRoute = routes.find((r) => r.id === id)
-      
-      if (!updatedRoute) {
-        setError('Route not found')
-        return
-      }
-
-      routes[route_index] = updatedRoute
-      setNewRoute({
-        ...updatedRoute,
-        updatedAt: new Date().toISOString(),
-      })
-
+      resetForm()
       setError('')
-      logger.info('mock.route.updated id=%s', id)
-    } catch (err) {
-      setError(err.message)
+    } catch {
+      setError('Failed to save route')
     }
   }
 
-  const handleDelete = async (id: string) => {
-    const route = routes.find((r) => r.id === id)
-    
-    if (!route) {
-      setError('Route not found')
-      return
-    }
-
+  const handleDelete = async (routeId: string) => {
     try {
-      const response = await getJson<Response>(`/api/mock/routes/${id}`, {
+      const response = await fetch(apiUrl(`/api/mock/routes/${routeId}`), {
         method: 'DELETE',
       })
-
       if (!response.ok) {
         setError(`Failed to delete route: ${response.status}`)
         return
       }
-
-      setRoutes(routes.filter(r => r.id !== id))
-      
-      setError('')
-      logger.info('mock.route.deleted id=%s', id)
-    } catch (err) {
-      setError(err.message)
+      setRoutes((prev) => prev.filter((route) => route.id !== routeId))
+      if (editingId === routeId) {
+        resetForm()
+      }
+    } catch {
+      setError('Failed to delete route')
     }
+  }
+
+  const handleEdit = (route: MockRoute) => {
+    setEditingId(route.id)
+    setForm({
+      method: route.method,
+      path: route.path,
+      status: route.status,
+      headers: JSON.stringify(route.headers ?? {}, null, 2),
+      body: route.body ? JSON.stringify(route.body, null, 2) : '',
+      delayMs: route.delayMs,
+      enabled: route.enabled,
+    })
+    setError('')
   }
 
   return (
@@ -191,144 +218,153 @@ function MockApiServer() {
       <div className="tool-header">
         <h1>Mock API Server</h1>
         <p className="tool-subtitle">
-          Create, update, and delete mock endpoints with custom responses
+          Create, update, and delete mock endpoints with custom responses.
         </p>
       </div>
 
       <div className="tool-panel">
         <div className="tool-section">
-          <h2>Create Route</h2>
+          <h2>{editingId ? 'Update Route' : 'Create Route'}</h2>
 
-          <label className="field">
-            <span>Method</span>
-            <select value={newRoute.method} onChange={(e) => setNewRoute({ ...newRoute, method: e.target.value as any }) >
-              <option value="GET">GET</option>
-              <option value="POST">POST</option>
-              <option value="PUT">PUT</option>
-              <option value="DELETE">DELETE</option>
-              <option value="PATCH">PATCH</option>
-              <option value="OPTIONS">OPTIONS</option>
-              <option value="HEAD">HEAD</option>
+          <div className="form-group">
+            <label htmlFor="method">Method</label>
+            <select
+              id="method"
+              value={form.method}
+              onChange={(e) => setForm((prev) => ({ ...prev, method: e.target.value }))}
+              className="input"
+            >
+              {['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'].map((method) => (
+                <option key={method} value={method}>
+                  {method}
+                </option>
+              ))}
             </select>
+          </div>
 
-          <label className="field">
-            <span>Path</span>
+          <div className="form-group">
+            <label htmlFor="path">Path</label>
             <input
+              id="path"
               type="text"
-              value={newRoute.path}
-              placeholder="/example/path"
-              onChange={(e) => setNewRoute({ ...newRoute, path: e.target.value as string })}
-              disabled={!!newRoute.method}
+              value={form.path}
+              onChange={(e) => setForm((prev) => ({ ...prev, path: e.target.value }))}
+              placeholder="/example"
+              className="input"
             />
-          </label>
+          </div>
 
-          <div className="checkbox-wrapper">
-            <label className="checkbox">
-              <input
-                type="checkbox"
-                checked={newRoute.enabled !== undefined ? newRoute.enabled : false}
-                onChange={(e) => setNewRoute({ ...newRoute, enabled: e.target.checked })}
-              />
-            </label>
+          <div className="form-group">
+            <label htmlFor="status">Status</label>
+            <input
+              id="status"
+              type="number"
+              min="200"
+              max="599"
+              value={form.status}
+              onChange={(e) => setForm((prev) => ({ ...prev, status: Number(e.target.value) }))}
+              className="input"
+            />
+          </div>
 
-          <button
-            className="button primary"
-            type="button"
-            onClick={handleCreate}
-          >
-            Create
-          </button>
-        </div>
+          <div className="form-group">
+            <label htmlFor="delay">Delay (ms)</label>
+            <input
+              id="delay"
+              type="number"
+              min="0"
+              max="10000"
+              value={form.delayMs}
+              onChange={(e) => setForm((prev) => ({ ...prev, delayMs: Number(e.target.value) }))}
+              className="input"
+            />
+          </div>
 
-        <div className="tool-section">
-          <h2>Response Body & Headers</h2>
-
-          <label className="field">
-            <span>Response Body (JSON)</span>
+          <div className="form-group">
+            <label htmlFor="headers">Headers (JSON)</label>
             <textarea
-              value={JSON.stringify(newRoute.body || '')}
+              id="headers"
+              value={form.headers}
               rows={3}
-              onChange={(e) => setNewRoute({ ...newRoute, body: JSON.parse(e.target.value as string) || null })}
+              onChange={(e) => setForm((prev) => ({ ...prev, headers: e.target.value }))}
+              className="input"
             />
-          </label>
+          </div>
 
-          <label className="field">
-            <span>Headers (key=value pairs)</span>
-            <input
-              type="text"
-              value={JSON.stringify(newRoute.headers || {})}
-              onChange={(e) => setNewRoute({ ...newRoute, headers: JSON.parse(e.target.value as string) || {} })}
-              rows={3}
+          <div className="form-group">
+            <label htmlFor="body">Body (JSON)</label>
+            <textarea
+              id="body"
+              value={form.body}
+              rows={4}
+              onChange={(e) => setForm((prev) => ({ ...prev, body: e.target.value }))}
+              className="input"
             />
-          </label>
+          </div>
 
-          <div className="checkbox-wrapper">
+          <div className="checkbox-row">
             <label className="checkbox">
               <input
                 type="checkbox"
-                checked={newRoute.enabled !== undefined ? newRoute.enabled : false}
-                onChange={(e) => setNewRoute({ ...newRoute, enabled: e.target.checked })}
+                checked={form.enabled}
+                onChange={(e) => setForm((prev) => ({ ...prev, enabled: e.target.checked }))}
               />
+              Enabled
             </label>
+          </div>
 
-          <button
-            className="button primary"
-            type="button"
-            onClick={handleCreate}
-          >
-            Create Route
-          </button>
+          <div className="button-row">
+            <button className="button primary" type="button" onClick={handleSubmit}>
+              {editingId ? 'Update Route' : 'Create Route'}
+            </button>
+            {editingId && (
+              <button className="button secondary" type="button" onClick={resetForm}>
+                Cancel
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="tool-section">
-          <h2>Current Routes</h2>
-
-          <button
-            className="button ghost"
-            type="button"
-            onClick={loadRoutes}
-          >
+          <h2>Routes</h2>
+          <button className="button ghost" type="button" onClick={loadRoutes}>
             Refresh Routes
           </button>
 
-          <div className="routes-list">
-            {routes.map((route, index) => (
-              <div key={route.id} className="route-card">
-                <div className="route-header">
-                  <span className={`route-method ${route.method.toLowerCase()}`}>{route.method}</span>
-                  <span className="route-path">{route.path || '(root)'}</span>
-                <span className="route-status">{route.status}</span>
-                <span className="route-enabled">{route.enabled ? 'enabled' : 'disabled'}</span>
+          {routes.length === 0 ? (
+            <p className="empty-state">No routes created yet.</p>
+          ) : (
+            <div className="routes-list">
+              {routes.map((route) => (
+                <div key={route.id} className="route-card">
+                  <div className="route-header">
+                    <span className={`route-method ${route.method.toLowerCase()}`}>
+                      {route.method}
+                    </span>
+                    <span className="route-path">{route.path}</span>
+                  </div>
+                  <div className="route-meta">
+                    <span>Status: {route.status}</span>
+                    <span>Delay: {route.delayMs}ms</span>
+                    <span>{route.enabled ? 'Enabled' : 'Disabled'}</span>
+                  </div>
+                  <div className="route-actions">
+                    <button className="button secondary" type="button" onClick={() => handleEdit(route)}>
+                      Edit
+                    </button>
+                    <button className="button ghost" type="button" onClick={() => handleDelete(route.id)}>
+                      Delete
+                    </button>
+                  </div>
                 </div>
-
-                <div className="route-meta">
-                  <button
-                    className="route-delete"
-                    type="button"
-                    onClick={() => handleDelete(route.id)}
-                    disabled={!route.id}
-                  >
-                    ×
-                  </button>
-                  <span className="route-path">{route.path}</span>
-                  <span className="route-date">{new Date(route.updatedAt).toLocaleString()}</span>
-                </div>
-              </div>
-
-              {route.body && (
-                <div className="route-body">
-                  <label className="field">Body</label>
-                  <pre className="route-body-content">{JSON.stringify(route.body)}</pre>
-                </div>
-              )}
+              ))}
             </div>
-          ))}
+          )}
         </div>
-      </div>
 
-      {error && <p className="form-error">{error}</p>}
-    </div>
-  </section>
+        {error && <p className="form-error">{error}</p>}
+      </div>
+    </section>
   )
 }
 

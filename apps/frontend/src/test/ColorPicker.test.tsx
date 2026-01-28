@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import ColorPicker from '../ColorPicker'
+import ColorPicker from '../pages/ColorPicker'
 
 describe('ColorPicker', () => {
   beforeEach(() => {
@@ -21,7 +21,7 @@ describe('ColorPicker', () => {
     expect(rgbValue).toBeInTheDocument()
   })
 
-  it('converts hex to rgb', () => {
+  it('converts hex to rgb', async () => {
     render(<ColorPicker />)
 
     const hexInput = screen.getByLabelText('Hex Color') as HTMLInputElement
@@ -42,7 +42,7 @@ describe('ColorPicker', () => {
     expect(rgbOutput.textContent).toBe('rgb(255, 0, 0)')
   })
 
-  it('converts rgb to hex', () => {
+  it('converts rgb to hex', async () => {
     render(<ColorPicker />)
 
     const rgbRInput = screen.getByLabelText('R') as HTMLInputElement

@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+
+const STORAGE_KEY = 'localforge-decisions'
 
 interface Decision {
   id: string
@@ -16,6 +18,19 @@ function DecisionLogger() {
   const [consequences, setConsequences] = useState<string>('')
   const [decisions, setDecisions] = useState<Decision[]>([])
   const [error, setError] = useState<string>('')
+
+  // Load decisions from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        setDecisions(parsed)
+      }
+    } catch {
+      // Silent fail - storage might be empty
+    }
+  }, [])
 
   const saveDecision = () => {
     setError('')
@@ -35,14 +50,15 @@ function DecisionLogger() {
         date: new Date().toISOString(),
       }
 
-      setDecisions([newDecision, ...decisions])
+      const updated = [newDecision, ...decisions]
+      setDecisions(updated)
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+
       setTitle('')
       setContext('')
       setDecision('')
       setConsequences('')
-
-      // Note: In production, this would make an API call to save to GitHub
-      // For now, we're storing in state
+      setError('')
     } catch {
       setError('Failed to save decision')
     }

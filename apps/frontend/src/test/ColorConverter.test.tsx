@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import ColorConverter from '../ColorConverter'
+import ColorConverter from '../pages/ColorConverter'
 
 describe('ColorConverter', () => {
   beforeEach(() => {

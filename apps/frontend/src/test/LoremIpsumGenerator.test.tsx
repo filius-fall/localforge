@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import LoremIpsumGenerator from './LoremIpsumGenerator'
+import LoremIpsumGenerator from '../pages/LoremIpsumGenerator'
 
 describe('LoremIpsumGenerator', () => {
   beforeEach(() => {
@@ -46,7 +46,6 @@ describe('LoremIpsumGenerator', () => {
   it('respects total words override', () => {
     render(<LoremIpsumGenerator />)
 
-    const paragraphsInput = screen.getByLabelText('Paragraphs') as HTMLInputElement
     const sentencesInput = screen.getByLabelText('Sentences per Paragraph') as HTMLInputElement
     const wordsInput = screen.getByLabelText('Words per Sentence') as HTMLInputElement
     const totalWordsInput = screen.getByLabelText('Total Words (overrides others)') as HTMLInputElement

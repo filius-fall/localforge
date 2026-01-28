@@ -77,7 +77,6 @@ const fallbackTools: Tool[] = [
     path: '/tools/decision-logger',
   },
 ]
-]
 
 function Home() {
   const [tools, setTools] = useState<Tool[]>(fallbackTools)

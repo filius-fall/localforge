@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import PaletteGenerator from '../PaletteGenerator'
+import PaletteGenerator from '../pages/PaletteGenerator'
 
 describe('PaletteGenerator', () => {
   beforeEach(() => {
@@ -94,8 +94,6 @@ describe('PaletteGenerator', () => {
     render(<PaletteGenerator />)
 
     // Mock a simple test by directly checking that copy function exists
-    const mockColors = [{ hex: '#ffffff', rgb: 'rgb(255, 255, 255)' }]
-
     // Since we can't easily test image processing in unit tests,
     // we'll verify the component structure
     expect(screen.getByText('Palette Generator')).toBeInTheDocument()

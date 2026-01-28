@@ -1,57 +1,75 @@
 import { useState } from 'react'
 import { HexColorPicker } from 'react-colorful'
 
+type RgbColor = {
+  r: number
+  g: number
+  b: number
+}
+
+const clampChannel = (value: number) => Math.max(0, Math.min(255, value))
+
+const rgbToHex = (rgb: RgbColor) => {
+  const toHex = (value: number) => clampChannel(value).toString(16).padStart(2, '0')
+  return `#${toHex(rgb.r)}${toHex(rgb.g)}${toHex(rgb.b)}`
+}
+
+const hexToRgb = (hexValue: string): RgbColor | null => {
+  const cleanHex = hexValue.replace('#', '').trim()
+  if (!/^[0-9a-fA-F]{3}$|^[0-9a-fA-F]{6}$/.test(cleanHex)) {
+    return null
+  }
+
+  const expanded =
+    cleanHex.length === 3
+      ? cleanHex
+          .split('')
+          .map((char) => char + char)
+          .join('')
+      : cleanHex
+
+  const r = parseInt(expanded.slice(0, 2), 16)
+  const g = parseInt(expanded.slice(2, 4), 16)
+  const b = parseInt(expanded.slice(4, 6), 16)
+
+  return { r, g, b }
+}
+
 function ColorPicker() {
-  const [color, setColor] = useState('#00ff00')
+  const [hex, setHex] = useState('#00ff00')
+  const [rgb, setRgb] = useState<RgbColor>({ r: 0, g: 255, b: 0 })
   const [error, setError] = useState<string>('')
 
-  const hexToRgb = (hex: string) => {
-    const cleanHex = hex.replace(/[^0-9A-Fa-f]/g, '')
-    if (cleanHex.length !== 6) {
-      throw new Error('Invalid hex color')
-    }
+  const handleHexChange = (value: string) => {
+    const nextHex = value.startsWith('#') ? value : `#${value}`
+    setHex(nextHex.toLowerCase())
 
-    const r = parseInt(cleanHex.substring(0, 2), 16)
-    const g = parseInt(cleanHex.substring(2, 4), 16)
-    const b = parseInt(cleanHex.substring(4, 6), 16)
-
-    if (isNaN(r) || isNaN(g) || isNaN(b)) {
-      throw new Error('Invalid hex color')
-    }
-
-    return `rgb(${r}, ${g}, ${b})`
-  }
-
-  const rgbToHex = (r: number, g: number, b: number) => {
-    if ([r, g, b].some(v => v < 0 || v > 255 || !Number.isInteger(v))) {
-      throw new Error('Invalid RGB values')
-    }
-
-    const toHex = (value: number) => {
-      let hex = value.toString(16)
-      while (hex.length < 6) {
-        hex = `0${hex}`
-      }
-      return hex.toUpperCase()
-    }
-
-    return `#${toHex(r)}${toHex(g)}${toHex(b)}`
-  }
-
-  const handleColorChange = (hex: string) => {
-    try {
-      const rgb = hexToRgb(hex)
-      setColor(rgb)
+    const parsed = hexToRgb(nextHex)
+    if (parsed) {
+      setRgb(parsed)
       setError('')
-    } catch (err) {
-      setError((err as Error).message)
+    } else if (value.trim().length > 0) {
+      setError('Invalid hex color')
+    } else {
+      setError('')
     }
   }
 
-  const copyToClipboard = async () => {
+  const handleRgbChange = (channel: keyof RgbColor, value: string) => {
+    const nextValue = Number(value)
+    const nextRgb = {
+      ...rgb,
+      [channel]: Number.isNaN(nextValue) ? 0 : clampChannel(nextValue),
+    }
+
+    setRgb(nextRgb)
+    setHex(rgbToHex(nextRgb))
+    setError('')
+  }
+
+  const copyToClipboard = async (value: string) => {
     try {
-      const rgbText = `rgb(${color.r}, ${color.g}, ${color.b})`
-      await navigator.clipboard.writeText(rgbText)
+      await navigator.clipboard.writeText(value)
     } catch {
       setError('Failed to copy to clipboard')
     }
@@ -62,129 +80,87 @@ function ColorPicker() {
       <div className="tool-header">
         <h1>Color Picker</h1>
         <p className="tool-subtitle">
-          Pick colors and copy hex/rgb values
+          Pick colors and copy hex/rgb values.
         </p>
       </div>
 
       <div className="tool-panel">
         <div className="tool-section">
           <h2>Hex Color</h2>
-
-          <label className="field">
-            <span>Hex Color</span>
+          <div className="form-group">
+            <label htmlFor="hex-input">Hex Color</label>
             <input
+              id="hex-input"
               type="text"
-              value={color.startsWith('#') ? color : `#${color}`}
-              onChange={(e) => handleColorChange(e.target.value)}
+              value={hex}
+              onChange={(e) => handleHexChange(e.target.value)}
               placeholder="#00ff00"
               maxLength={7}
+              className="input"
             />
-          </label>
+          </div>
+
+          <HexColorPicker color={hex} onChange={handleHexChange} />
 
           <div className="output-card">
             <p className="preview-label">RGB Value</p>
-            <pre>{`rgb(${color.r}, ${color.g}, ${color.b})`}</pre>
+            <pre>{`rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`}</pre>
           </div>
-
-          <button
-            className="button ghost"
-            type="button"
-            onClick={copyToClipboard}
-            disabled={!color.startsWith('#')}
-          >
-            Copy RGB
-          </button>
         </div>
 
         <div className="tool-section">
           <h2>RGB Input</h2>
-
-          <label className="field">
-            <span>R</span>
-            <input
-              type="number"
-              min="0"
-              max="255"
-              value={color.r !== null ? color.r : ''}
-              onChange={(e) => {
-                const r = parseInt(e.target.value) || 0
-                const newG = color.g !== null ? color.g : 0
-                const newB = color.b !== null ? color.b : 0
-                const newRgb = { r, g: newG, b: newB }
-                try {
-                  setColor(newRgb)
-                  setError('')
-                } catch (err) {
-                  setError((err as Error).message)
-                }
-              }}
-            />
-            <input
-              type="number"
-              min="0"
-              max="255"
-              value={color.g !== null ? color.g : ''}
-              onChange={(e) => {
-                const newG = parseInt(e.target.value) || 0
-                const newR = color.r !== null ? color.r : 0
-                const newB = color.b !== null ? color.b : 0
-                const newRgb = { r: newR, g: newG, b: newB }
-                try {
-                  setColor(newRgb)
-                  setError('')
-                } catch (err) {
-                  setError((err as Error).message)
-                }
-              }}
-            />
-            <input
-              type="number"
-              min="0"
-              max="255"
-              value={color.b !== null ? color.b : ''}
-              onChange={(e) => {
-                const newR = color.r !== null ? color.r : 0
-                const newG = color.g !== null ? color.g : 0
-                const newB = color.b !== null ? color.b : 0
-                const newRgb = { r: newR, g: newG, b: newB }
-                try {
-                  setColor(newRgb)
-                  setError('')
-                } catch (err) {
-                  setError((err as Error).message)
-                }
-              }}
-            />
-            <input
-              type="number"
-              min="0"
-              max="255"
-              value={color.b !== null ? color.b : ''}
-              onChange={(e) => {
-                const newB = color.b !== null ? color.b : 0
-                const newR = color.r !== null ? color.r : 0
-                const newRgb = { r: newR, g: newG, b: newB }
-                try {
-                  setColor(newRgb)
-                  setError('')
-                } catch (err) {
-                  setError((err as Error).message)
-                }
-              }}
-            />
-            <div className="output-card">
-              <p className="preview-label">Hex Output</p>
-              <pre>{color.startsWith('#') ? color : `#${color}`}</pre>
+          <div className="rgb-inputs">
+            <div className="form-group">
+              <label htmlFor="rgb-r">R</label>
+              <input
+                id="rgb-r"
+                type="number"
+                min="0"
+                max="255"
+                value={rgb.r}
+                onChange={(e) => handleRgbChange('r', e.target.value)}
+                className="input"
+              />
             </div>
-            <button
-              className="button primary"
-              type="button"
-              onClick={copyToClipboard}
-              disabled={color === null}
-            >
-              Copy Hex
-            </button>
+            <div className="form-group">
+              <label htmlFor="rgb-g">G</label>
+              <input
+                id="rgb-g"
+                type="number"
+                min="0"
+                max="255"
+                value={rgb.g}
+                onChange={(e) => handleRgbChange('g', e.target.value)}
+                className="input"
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="rgb-b">B</label>
+              <input
+                id="rgb-b"
+                type="number"
+                min="0"
+                max="255"
+                value={rgb.b}
+                onChange={(e) => handleRgbChange('b', e.target.value)}
+                className="input"
+              />
+            </div>
           </div>
+
+          <div className="output-card">
+            <p className="preview-label">Hex Output</p>
+            <pre>{hex}</pre>
+          </div>
+
+          <button
+            className="button primary"
+            type="button"
+            onClick={() => copyToClipboard(hex)}
+          >
+            Copy Hex
+          </button>
         </div>
 
         {error && <p className="form-error">{error}</p>}

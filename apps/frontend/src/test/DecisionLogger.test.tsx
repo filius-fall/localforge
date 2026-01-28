@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import DecisionLogger from '../DecisionLogger'
+import DecisionLogger from '../pages/DecisionLogger'
 
 describe('DecisionLogger', () => {
   beforeEach(() => {

@@ -14,15 +14,10 @@ function LoremIpsumGenerator() {
       wordsPerSentence: { min: wordsPerSentence, max: wordsPerSentence },
     })
 
-    let text: string
-    if (totalWords) {
-      const total = parseInt(totalWords, 10)
-      const avgWordsPerSentence = Math.round(total / parseInt(totalWords, 10) || 0)
-      lorem.generateWords(total, avgWordsPerSentence)
-      text = lorem.getWords().join(' ')
-    } else {
-      text = lorem.generateParagraphs(parseInt(paragraphs, 10)).join('\n\n')
-    }
+    const total = totalWords ? Number(totalWords) : 0
+    const text = total > 0
+      ? lorem.generateWords(total)
+      : lorem.generateParagraphs(paragraphs)
 
     setOutput(text)
   }
@@ -40,7 +35,7 @@ function LoremIpsumGenerator() {
       <div className="tool-header">
         <h1>Lorem Ipsum Generator</h1>
         <p className="tool-subtitle">
-          Generate placeholder text with configurable length
+          Generate placeholder text with configurable length.
         </p>
       </div>
 

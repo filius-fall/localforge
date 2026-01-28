@@ -131,7 +131,7 @@ function BaseConverter() {
               onClick={swapBases}
               title="Swap input and output bases"
             >
-              ⇄ Swap Bases
+              Swap Bases
             </button>
           </div>
 

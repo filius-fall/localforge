@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import BaseConverter from '../BaseConverter'
+import BaseConverter from '../pages/BaseConverter'
 
 describe('BaseConverter', () => {
   beforeEach(() => {
