@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Fragment } from 'react'
 import { getJson } from '../lib/api'
 import { copyToClipboard } from '../lib/clipboard'
 
@@ -253,7 +253,12 @@ function DecisionLogger() {
                   {d.tags && d.tags.length > 0 && (
                     <div className="decision-section">
                       <h4>Tags</h4>
-                      <p>{d.tags.map(t => <span key={t} className="tag">{t}</span>).join(', ')}</p>
+                      <p>{d.tags.map((t, i) => (
+                        <Fragment key={t}>
+                          {i > 0 && ', '}
+                          <span className="tag">{t}</span>
+                        </Fragment>
+                      ))}</p>
                     </div>
                   )}
                   {d.url && (

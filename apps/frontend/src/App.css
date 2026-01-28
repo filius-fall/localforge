@@ -251,6 +251,122 @@
   pointer-events: none;
 }
 
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  background: rgba(56, 189, 248, 0.1);
+  border-radius: 4px;
+  color: var(--accent);
+  font-size: 0.85rem;
+}
+
+.decision-list {
+  display: grid;
+  gap: 18px;
+}
+
+.decision-item {
+  padding: 20px;
+  border-radius: var(--radius);
+  background: rgba(14, 22, 38, 0.95);
+  border: 1px solid var(--border-strong);
+  position: relative;
+}
+
+.decision-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.decision-header h3 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 0;
+}
+
+.decision-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.decision-date {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.decision-status {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.decision-status.status-accepted {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.decision-status.status-rejected {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.decision-status.status-superseded {
+  background: rgba(249, 115, 22, 0.15);
+  color: #f97316;
+}
+
+.decision-status.status-proposed {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.decision-section {
+  margin-top: 12px;
+}
+
+.decision-section h4 {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.decision-section p {
+  color: var(--ink-muted);
+  line-height: 1.5;
+}
+
+.decision-item .icon-button {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+.external-link {
+  color: var(--accent);
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.external-link:hover {
+  color: var(--accent-strong);
+}
+
+.external-link.small {
+  font-size: 0.85rem;
+}
+
 .tool-label {
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 600;
