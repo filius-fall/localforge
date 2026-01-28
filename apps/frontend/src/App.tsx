@@ -20,6 +20,7 @@ import DataGenerator from './pages/DataGenerator'
 import PaletteGenerator from './pages/PaletteGenerator'
 import BaseConverter from './pages/BaseConverter'
 import ColorConverter from './pages/ColorConverter'
+import DecisionLogger from './pages/DecisionLogger'
 import './App.css'
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -98,8 +99,11 @@ function App() {
              <NavLink to="/tools/base-converter" className={navLinkClass}>
               Base Converter
             </NavLink>
-            <NavLink to="/tools/color-converter" className={navLinkClass}>
+             <NavLink to="/tools/color-converter" className={navLinkClass}>
               Color Converter
+            </NavLink>
+            <NavLink to="/tools/decision-logger" className={navLinkClass}>
+              Decisions
             </NavLink>
             <NavLink to="/tools/notes" className={navLinkClass}>
               Notes
@@ -130,6 +134,7 @@ function App() {
               <Route path="/tools/palette-generator" element={<PaletteGenerator />} />
               <Route path="/tools/base-converter" element={<BaseConverter />} />
               <Route path="/tools/color-converter" element={<ColorConverter />} />
+              <Route path="/tools/decision-logger" element={<DecisionLogger />} />
             </Routes>
         </main>
       </div>

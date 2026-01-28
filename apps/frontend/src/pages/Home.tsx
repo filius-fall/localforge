@@ -70,6 +70,12 @@ const fallbackTools: Tool[] = [
     description: 'Convert colors between HEX and RGB formats.',
     path: '/tools/color-converter',
   },
+  {
+    slug: 'decision-logger',
+    name: 'Decision Logger',
+    description: 'Log and track architecture decisions (ADRs).',
+    path: '/tools/decision-logger',
+  },
 ]
 ]
 
