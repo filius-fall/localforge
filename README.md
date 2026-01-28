@@ -134,14 +134,14 @@ cd localforge
 
 Create `.env` file for backend environment variables:
 ```bash
-# Example values - replace with your actual values
+# Generate GitHub token for Decision Logger
 GH_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-DECISION_LOG_OWNER=your-github-username
+DECISION_LOG_OWNER=your-username-or-org
 DECISION_LOG_REPO=localforge-decisions
 DECISION_LOG_BRANCH=main
 ```
 
-### 3. Docker Compose file
+### 3. Create Docker Compose file
 Create `docker-compose.yml`:
 ```yaml
 version: "3.9"
