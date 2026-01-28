@@ -134,14 +134,19 @@ cd localforge
 
 Create `.env` file for backend environment variables:
 ```bash
-# Generate GitHub token for Decision Logger
-GH_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-DECISION_LOG_OWNER=your-username-or-org
-DECISION_LOG_REPO=localforge-decisions
-DECISION_LOG_BRANCH=main
+# Copy from example and fill in your values
+cp .env.example .env
+
+# Or manually set (DO NOT commit .env to git!)
+export GH_TOKEN="your_github_pat_here"
+export DECISION_LOG_OWNER="your-github-username"
+export DECISION_LOG_REPO="localforge-decisions"
+export DECISION_LOG_BRANCH="main"
 ```
 
-### 3. Create Docker Compose file
+**Important**: Never commit `.env` file to git - it contains secrets. Use `.env.example` as a template only.
+
+### 3. Docker Compose file
 Create `docker-compose.yml`:
 ```yaml
 version: "3.9"
