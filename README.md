@@ -77,8 +77,8 @@ Required for `POST /api/decisions`. Creates markdown ADRs in a private GitHub re
 # Generate token with repo scope (recommended method)
 export GH_TOKEN=$(gh auth token)
 
-# Required configuration
-export DECISION_LOG_OWNER="your-username-or-org"
+# Required configuration (for personal private repos, use your GitHub username)
+export DECISION_LOG_OWNER="your-github-username"
 export DECISION_LOG_REPO="localforge-decisions"
 export DECISION_LOG_BRANCH="main"  # Optional, defaults to main
 ```
