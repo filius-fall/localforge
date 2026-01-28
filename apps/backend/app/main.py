@@ -98,13 +98,13 @@ TOOLS = [
         "slug": "image",
         "name": "Image Toolkit",
         "path": "/tools/image",
-        "description": "Convert, resize, crop, watermark, and clean images.",
+        "description": "Convert, resize, crop, and watermark images locally.",
     },
     {
         "slug": "html",
         "name": "HTML Compiler",
         "path": "/tools/html",
-        "description": "Live HTML, CSS, and JS preview.",
+        "description": "Live HTML, CSS, and JS preview in a sandbox.",
     },
     {
         "slug": "pdf",
@@ -134,7 +134,7 @@ TOOLS = [
         "slug": "qr",
         "name": "QR Generator",
         "path": "/tools/qr",
-        "description": "Generate QR codes for text, links, or Wi-Fi.",
+        "description": "Generate QR codes for links or text.",
     },
     {
         "slug": "network",
@@ -158,13 +158,19 @@ TOOLS = [
         "slug": "time",
         "name": "Timestamp Tools",
         "path": "/tools/time",
-        "description": "Epoch converter, timezone compare, cron helper.",
+        "description": "Epoch converter, cron helper, timezone compare.",
     },
     {
         "slug": "notes",
         "name": "Notes & Snippets",
         "path": "/tools/notes",
         "description": "Lightweight notes and code snippets stored locally.",
+    },
+    {
+        "slug": "lorem",
+        "name": "Lorem Ipsum",
+        "path": "/tools/lorem",
+        "description": "Generate placeholder text with configurable length.",
     },
 ]
 
