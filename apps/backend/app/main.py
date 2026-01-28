@@ -274,13 +274,17 @@ def _ensure_binary(name: str) -> str:
 
 
 def _find_libreoffice() -> str:
-    for candidate in ("soffice", "libreoffice"):
+    for candidate in ("soffice", "libreoffice", "libreoffice7.5"):
         path = shutil.which(candidate)
         if path:
+            logger.info("dependency.found name=libreoffice path=%s", path)
             return path
     logger.error("dependency.missing name=libreoffice")
     raise HTTPException(
-        status_code=501, detail="LibreOffice is required for this conversion."
+        status_code=501,
+        detail="LibreOffice is required for this conversion. "
+        "If running in Docker, rebuild the image with 'docker compose build --no-cache'. "
+        "For local dev, install LibreOffice: sudo apt install libreoffice-writer",
     )
 
 

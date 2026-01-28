@@ -46,8 +46,8 @@ export async function copyToClipboard(
 export async function readFromClipboard(
   onError?: (error: string) => void
 ): Promise<string | null> {
-  if (!navigator.clipboard || !(window.isSecureContext ?? false)) {
-    const error = 'Clipboard unavailable. Use HTTPS or localhost.'
+  if (!navigator.clipboard) {
+    const error = 'Clipboard API not available in this browser.'
     if (onError) onError(error)
     return null
   }
@@ -55,8 +55,8 @@ export async function readFromClipboard(
   try {
     const text = await navigator.clipboard.readText()
     return text
-  } catch {
-    const error = 'Clipboard permission denied or unavailable.'
+  } catch (err) {
+    const error = 'Clipboard permission denied. Use HTTPS or localhost.'
     if (onError) onError(error)
     return null
   }

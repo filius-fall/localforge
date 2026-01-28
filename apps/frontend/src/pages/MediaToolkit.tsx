@@ -241,6 +241,11 @@ function MediaToolkit() {
 
         {status && <p className="form-status">{status}</p>}
         {error && <p className="form-error">{error}</p>}
+        {loading && (
+          <div className="form-status">
+            <span className="loading-spinner">Processing</span>
+          </div>
+        )}
       </div>
     </section>
   )

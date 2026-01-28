@@ -9,9 +9,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     ghostscript \
     iputils-ping \
-    libreoffice \
-    libreoffice-draw \
     libreoffice-writer \
+    libreoffice-calc \
+    libreoffice-impress \
+    libreoffice-draw \
+    libreoffice-math \
     pandoc \
     wkhtmltopdf \
     fonts-dejavu-core \

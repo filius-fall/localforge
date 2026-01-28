@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import '../SideNav.css'
 
 interface Tool {
   slug: string
@@ -80,92 +81,74 @@ const TOOL_CATEGORIES: Category[] = [
   },
 ]
 
-function SideNav() {
-  const location = useLocation()
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(() => new Set())
-
-  const toggleCategory = (categoryId: string) => {
-    setExpandedCategories((prev) => {
-      const next = new Set(prev)
-      if (next.has(categoryId)) {
-        next.delete(categoryId)
-      } else {
-        next.add(categoryId)
-      }
-      return next
-    })
+const getPreferredTheme = () => {
+  if (typeof window === 'undefined') {
+    return 'light'
   }
 
-  const isCategoryActive = (categoryId: string) => {
-    return TOOL_CATEGORIES.some((cat) => cat.id === categoryId && cat.tools.some((tool) => location.pathname === tool.path))
+  const stored = window.localStorage.getItem('theme')
+  if (stored === 'light' || stored === 'dark') {
+    return stored
+  }
+
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
+
+function SideNav() {
+  const location = useLocation()
+  const [theme, setTheme] = useState(getPreferredTheme)
+  const isHome = location.pathname === '/'
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    window.localStorage.setItem('theme', theme)
+  }, [theme])
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))
   }
 
   return (
-    <aside className="side-nav">
+    <aside className="side-nav" aria-label="Tool navigation">
       <div className="side-nav-header">
         <Link to="/" className="side-nav-brand">
-          <span className="brand-mark">LF</span>
-          <span className="brand-name">LocalForge</span>
+          LocalForge
         </Link>
+        <p className="side-nav-caption">Local-first utilities</p>
       </div>
 
       <nav className="side-nav-content">
-        {TOOL_CATEGORIES.map((category) => {
-          const isActive = isCategoryActive(category.id)
-          const isExpanded = expandedCategories.has(category.id)
-
-          return (
-            <div key={category.id} className={`side-nav-category ${isActive ? 'active' : ''}`}>
-              <button
-                type="button"
-                className={`side-nav-toggle ${isExpanded ? 'expanded' : ''}`}
-                onClick={() => toggleCategory(category.id)}
-                aria-expanded={isExpanded}
-                aria-controls={`category-${category.id}`}
-              >
-                <span className="side-nav-toggle-icon">
-                  {isExpanded ? '−' : '+'}
-                </span>
-                <span className="side-nav-category-name">{category.name}</span>
-                <span className={`side-nav-badge ${isActive ? 'visible' : ''}`}>
-                  {isActive ? '•' : ''}
-                </span>
-              </button>
-
-              {isExpanded && (
-                <ul className="side-nav-tools">
-                  {category.tools.map((tool) => (
-                    <li key={tool.slug}>
-                      <Link
-                        to={tool.path}
-                        className={`side-nav-tool ${location.pathname === tool.path ? 'active' : ''}`}
-                        id={`category-${category.id}`}
-                      >
-                        {tool.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
+        <Link to="/" className={`side-nav-home ${isHome ? 'active' : ''}`}>
+          Home
+        </Link>
+        {TOOL_CATEGORIES.map((category) => (
+          <div key={category.id} className="side-nav-group">
+            <p className="side-nav-group-title">{category.name}</p>
+            <div className="side-nav-group-links">
+              {category.tools.map((tool) => (
+                <Link
+                  key={tool.slug}
+                  to={tool.path}
+                  className={`side-nav-tool ${location.pathname === tool.path ? 'active' : ''}`}
+                >
+                  {tool.name}
+                </Link>
+              ))}
             </div>
-          )
-        })}
+          </div>
+        ))}
       </nav>
 
       <div className="side-nav-footer">
         <button
           type="button"
-          className="side-nav-collapse-all"
-          onClick={() => setExpandedCategories(new Set(TOOL_CATEGORIES.map((c) => c.id)))}
+          className="theme-toggle"
+          onClick={toggleTheme}
+          role="switch"
+          aria-checked={theme === 'dark'}
         >
-          Expand All
-        </button>
-        <button
-          type="button"
-          className="side-nav-collapse-all"
-          onClick={() => setExpandedCategories(new Set())}
-        >
-          Collapse All
+          <span className="theme-toggle-label">Theme</span>
+          <span className="theme-toggle-value">{theme === 'dark' ? 'Dark' : 'Light'}</span>
         </button>
       </div>
     </aside>

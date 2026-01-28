@@ -101,31 +101,30 @@ function Home() {
       <div className="hero">
         <div>
           <p className="eyebrow">LocalForge Toolkit</p>
-          <h1>Shape your day with precise, local-first utilities.</h1>
+          <h1>Fast local utilities for everyday work.</h1>
           <p className="hero-copy">
-            Launch into focused tools for teams, creators, and makers. Everything
-            stays fast, offline-friendly, and tailored for daily flow.
+            Pick a tool from the sidebar. Everything runs locally and keeps your data on your machine.
           </p>
           <div className="hero-actions">
             <Link className="button primary" to="/tools/timezone">
-              Start with Time Zones
+              Open Time Zones
             </Link>
             <Link className="button ghost" to="/tools/html">
-              Try the HTML Compiler
+              HTML Compiler
             </Link>
           </div>
         </div>
         <div className="hero-panel">
           <div className="panel-card">
-            <p className="panel-title">Now Serving</p>
-          <div className="panel-list">
-            <span>Time Zone Converter</span>
-            <span>Image Toolkit</span>
-            <span>HTML Compiler</span>
-            <span>PDF Toolkit</span>
-            <span>File Converter</span>
-            <span>Video & Audio Tools</span>
-          </div>
+            <p className="panel-title">Popular tools</p>
+            <div className="panel-list">
+              <span>Time Zone Converter</span>
+              <span>Image Toolkit</span>
+              <span>HTML Compiler</span>
+              <span>PDF Toolkit</span>
+              <span>File Converter</span>
+              <span>Video & Audio Tools</span>
+            </div>
             <p className="panel-note">More tools coming soon.</p>
           </div>
         </div>
