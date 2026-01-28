@@ -66,30 +66,93 @@ npm test
 
 Required for `POST /api/decisions`. Creates markdown ADRs in a private GitHub repository.
 
-**Step 1: Create the private repository first**
+**Step 1: Create a private repository first**
 1. Go to https://github.com/new
 2. Repository name: `localforge-decisions`
 3. Make it **Private**
 4. Click **Create repository**
 
-**Step 2: Set environment variables**
-```bash
-# Generate token with repo scope (recommended method)
-export GH_TOKEN=$(gh auth token)
+**Step 2: Create a GitHub Personal Access Token (Classic PAT)**
 
-# Required configuration (for personal private repos, use your GitHub username)
-export DECISION_LOG_OWNER="your-github-username"
-export DECISION_LOG_REPO="localforge-decisions"
-export DECISION_LOG_BRANCH="main"  # Optional, defaults to main
+Choose **ONE** of the methods below:
+
+**Option A: Classic PAT (Recommended, fastest)**
+
+1. Go to GitHub → **Settings**
+2. Click **Developer settings** in the left sidebar
+3. Click **Personal access tokens** → **Tokens (classic)**
+4. Click **Generate new token (classic)**
+5. Fill in the form:
+   - **Note**: Enter `LocalForge Decision Logger`
+   - **Expiration**: Choose an expiration date (recommended: 30-90 days)
+   - **Scopes**: Select **`repo`** (this grants full access to all your repositories)
+6. Click **Generate token**
+7. **Copy the token immediately** - you cannot see it again after leaving this page
+8. Store securely - use a password manager or environment variable
+
+**Option B: Fine-grained Personal Access Token**
+
+1. Go to GitHub → **Settings**
+2. Click **Developer settings** in the left sidebar
+3. Click **Personal access tokens** → **Fine-grained tokens**
+4. Click **Generate new token**
+5. Fill in the form:
+   - **Token name**: Enter `LocalForge Decision Logger`
+   - **Expiration**: Choose an expiration date (recommended: 30-90 days)
+6. Under **Repository access**:
+   - Click **Only select repositories**
+   - Select `localforge-decisions` from the list
+7. Under **Repository permissions**:
+   - Select **Contents** → **Read and write**
+8. Click **Generate token**
+9. **Copy the token immediately** - you cannot see it again after leaving this page
+10. Store securely - use a password manager or environment variable
+
+**Option C: GitHub CLI (Alternative)**
+
+```bash
+# First time setup
+gh auth login
+# Follow the prompts in your browser to authenticate
+
+# Then generate token
+gh auth token
 ```
 
-**Important**: The `GH_TOKEN` must have `repo` scope. Use `gh auth token --scopes repo` to verify.
+**Step 3: Set environment variables**
 
-**Error troubleshooting**: If you see "Failed to check decision path on GitHub (status: 403)", verify:
-1. Token has `repo` scope
-2. Repository name is correct (`localforge-decisions`)
-3. Repository is private
-4. `DECISION_LOG_OWNER` matches your GitHub username
+Create `.env` file (copy from `.env.example` and fill in your values):
+```bash
+# Replace with your actual generated token from Step 2
+GH_TOKEN=your_actual_token_here
+
+# For personal private repos, use your GitHub username
+DECISION_LOG_OWNER=filius-fall
+
+# The repository name you created in Step 1
+DECISION_LOG_REPO=localforge-decisions
+
+# Branch to commit ADRs (optional, defaults to main)
+DECISION_LOG_BRANCH=main
+```
+
+**Important security notes**:
+- Never commit `.env` file to git - it contains secrets
+- Keep tokens private - they grant full access to your GitHub account
+- Classic PATs grant access to **all** repositories (if you prefer limited access, use Fine-grained tokens)
+- Fine-grained tokens are recommended - they allow restricting access to only the `localforge-decisions` repository
+
+**Error troubleshooting**: If you see "Failed to check decision path on GitHub (status: 401)", verify:
+1. Token has not expired
+2. Token has correct permissions (`repo` for Classic, `Contents = Read and write` for Fine-grained)
+3. Repository name is correct (`localforge-decisions`)
+4. Repository is private
+5. No extra spaces, quotes, or newline characters in token value
+
+**If using Docker**: Environment variables are loaded from `.env` file automatically. Simply run:
+```bash
+docker compose up -d --build
+```
 
 
 ## Clipboard Notes
