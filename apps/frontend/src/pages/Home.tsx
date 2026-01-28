@@ -17,16 +17,64 @@ const fallbackTools: Tool[] = [
     path: '/tools/timezone',
   },
   {
-    slug: 'image',
-    name: 'Image Converter',
-    description: 'Convert images to web-ready formats in seconds.',
-    path: '/tools/image',
+    slug: 'time',
+    name: 'Timestamp Tools',
+    description: 'Epoch converter, cron helper, timezone compare.',
+    path: '/tools/time',
   },
   {
-    slug: 'html',
-    name: 'HTML Compiler',
-    description: 'Live HTML, CSS, and JS preview in a sandbox.',
-    path: '/tools/html',
+    slug: 'lorem',
+    name: 'Lorem Ipsum',
+    description: 'Generate placeholder text with configurable length.',
+    path: '/tools/lorem',
+  },
+  {
+    slug: 'emoji',
+    name: 'Emoji',
+    description: 'Search, select, and copy emojis.',
+    path: '/tools/emoji',
+  },
+  {
+    slug: 'color-picker',
+    name: 'Color Picker',
+    description: 'Pick colors and copy hex/rgb values.',
+    path: '/tools/color-picker',
+  },
+  {
+    slug: 'mock-api',
+    name: 'Mock API Server',
+    description: 'Create and manage mock API responses.',
+    path: '/tools/mock-api',
+  },
+  {
+    slug: 'data-generator',
+    name: 'Data Generator',
+    description: 'Generate fake profiles, addresses, and company data.',
+    path: '/tools/data-generator',
+  },
+  {
+    slug: 'palette-generator',
+    name: 'Palette Generator',
+    description: 'Extract dominant color palettes from images.',
+    path: '/tools/palette-generator',
+  },
+  {
+    slug: 'base-converter',
+    name: 'Base Converter',
+    description: 'Convert numbers between binary, octal, decimal, and hexadecimal.',
+    path: '/tools/base-converter',
+  },
+  {
+    slug: 'color-converter',
+    name: 'Color Converter',
+    description: 'Convert colors between HEX and RGB formats.',
+    path: '/tools/color-converter',
+  },
+  {
+    slug: 'decision-logger',
+    name: 'Decision Logger',
+    description: 'Log and track architecture decisions (ADRs).',
+    path: '/tools/decision-logger',
   },
 ]
 
@@ -70,11 +118,14 @@ function Home() {
         <div className="hero-panel">
           <div className="panel-card">
             <p className="panel-title">Now Serving</p>
-            <div className="panel-list">
-              <span>Time Zone Converter</span>
-              <span>Image Converter</span>
-              <span>HTML Compiler</span>
-            </div>
+          <div className="panel-list">
+            <span>Time Zone Converter</span>
+            <span>Image Toolkit</span>
+            <span>HTML Compiler</span>
+            <span>PDF Toolkit</span>
+            <span>File Converter</span>
+            <span>Video & Audio Tools</span>
+          </div>
             <p className="panel-note">More tools coming soon.</p>
           </div>
         </div>

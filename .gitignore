@@ -63,3 +63,5 @@ Thumbs.db
 # Allow frontend lib directory
 !apps/frontend/src/lib/
 !apps/frontend/src/lib/**
+# Backend data
+apps/backend/.data/

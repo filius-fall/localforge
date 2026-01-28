@@ -31,10 +31,14 @@ button {
 })`,
 }
 
+const tabs = ['html', 'css', 'js'] as const
+type EditorTab = (typeof tabs)[number]
+
 function HtmlCompiler() {
   const [html, setHtml] = useState(starter.html)
   const [css, setCss] = useState(starter.css)
   const [js, setJs] = useState(starter.js)
+  const [activeTab, setActiveTab] = useState<EditorTab>('html')
 
   const srcDoc = useMemo(
     () => `<!DOCTYPE html>
@@ -58,6 +62,19 @@ function HtmlCompiler() {
     setJs(starter.js)
   }
 
+  const editorValue =
+    activeTab === 'html' ? html : activeTab === 'css' ? css : js
+
+  const handleEditorChange = (value: string) => {
+    if (activeTab === 'html') {
+      setHtml(value)
+    } else if (activeTab === 'css') {
+      setCss(value)
+    } else {
+      setJs(value)
+    }
+  }
+
   return (
     <section className="tool-page">
       <div className="tool-header">
@@ -74,33 +91,31 @@ function HtmlCompiler() {
           </button>
         </div>
         <div className="compiler-grid">
-          <div className="editor-stack">
+          <div className="editor-panel">
+            <div className="editor-tabs" role="tablist" aria-label="HTML compiler tabs">
+              {tabs.map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === tab}
+                  className={`editor-tab${activeTab === tab ? ' active' : ''}`}
+                  onClick={() => setActiveTab(tab)}
+                >
+                  {tab.toUpperCase()}
+                </button>
+              ))}
+            </div>
             <label className="editor-card">
-              <span>HTML</span>
+              <span className="sr-only">{activeTab.toUpperCase()} editor</span>
               <textarea
-                value={html}
-                onChange={(event) => setHtml(event.target.value)}
-                spellCheck={false}
-              />
-            </label>
-            <label className="editor-card">
-              <span>CSS</span>
-              <textarea
-                value={css}
-                onChange={(event) => setCss(event.target.value)}
-                spellCheck={false}
-              />
-            </label>
-            <label className="editor-card">
-              <span>JavaScript</span>
-              <textarea
-                value={js}
-                onChange={(event) => setJs(event.target.value)}
+                value={editorValue}
+                onChange={(event) => handleEditorChange(event.target.value)}
                 spellCheck={false}
               />
             </label>
           </div>
-          <div className="preview-pane">
+          <div className="preview-pane resizable">
             <p className="preview-label">Live Preview</p>
             <iframe title="HTML preview" sandbox="allow-scripts" srcDoc={srcDoc} />
           </div>
