@@ -72,12 +72,17 @@ dev: ## Start both backend and frontend locally
 dev-backend: ## Start backend only (FastAPI on port 8000)
 	@echo "$(BLUE)Starting backend with environment variables...$(NC)"
 	@if [ -f .env ]; then \
-		set -a && . .env && cd apps/backend && uv run fastapi dev; \
+		export $$(cat .env) && cd apps/backend && uv run fastapi dev; \
 	else \
 		echo "$(RED)Error: .env file not found$(NC)"; \
 		echo "$(YELLOW)Run: cp .env.example .env$(NC)"; \
 		exit 1; \
 	fi
+.PHONY: stop-backend
+
+stop-backend: ## Stop backend server
+	@echo "$(BLUE)Stopping backend server...$(NC)"
+	@pkill -f -P uvicorn || echo "$(YELLOW)No backend process found$(NC)"
 
 dev-frontend: ## Start frontend only (Vite on port 5173)
 	@echo "$(BLUE)Starting frontend...$(NC)"
