@@ -202,6 +202,12 @@ TOOLS = [
         "description": "Convert numbers between binary, octal, decimal, and hexadecimal.",
         "path": "/tools/base-converter",
     },
+    {
+        "slug": "color-converter",
+        "name": "Color Converter",
+        "description": "Convert colors between HEX and RGB formats.",
+        "path": "/tools/color-converter",
+    },
 ]
 
 IMAGE_FORMATS = {

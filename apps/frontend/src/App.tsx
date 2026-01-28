@@ -19,6 +19,7 @@ import MockApiServer from './pages/MockApiServer'
 import DataGenerator from './pages/DataGenerator'
 import PaletteGenerator from './pages/PaletteGenerator'
 import BaseConverter from './pages/BaseConverter'
+import ColorConverter from './pages/ColorConverter'
 import './App.css'
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -94,8 +95,11 @@ function App() {
              <NavLink to="/tools/palette-generator" className={navLinkClass}>
               Palette
             </NavLink>
-            <NavLink to="/tools/base-converter" className={navLinkClass}>
+             <NavLink to="/tools/base-converter" className={navLinkClass}>
               Base Converter
+            </NavLink>
+            <NavLink to="/tools/color-converter" className={navLinkClass}>
+              Color Converter
             </NavLink>
             <NavLink to="/tools/notes" className={navLinkClass}>
               Notes
@@ -125,6 +129,7 @@ function App() {
               <Route path="/tools/data-generator" element={<DataGenerator />} />
               <Route path="/tools/palette-generator" element={<PaletteGenerator />} />
               <Route path="/tools/base-converter" element={<BaseConverter />} />
+              <Route path="/tools/color-converter" element={<ColorConverter />} />
             </Routes>
         </main>
       </div>
