@@ -83,7 +83,6 @@ const TOOL_CATEGORIES: Category[] = [
 function SideNav() {
   const location = useLocation()
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(() => new Set())
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
 
   const toggleCategory = (categoryId: string) => {
     setExpandedCategories((prev) => {

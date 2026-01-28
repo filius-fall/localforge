@@ -1,4 +1,3 @@
-import { useLocation } from 'react-router-dom'
 import SideNav from './SideNav'
 
 interface ToolLayoutProps {
@@ -6,8 +5,6 @@ interface ToolLayoutProps {
 }
 
 function ToolLayout({ children }: ToolLayoutProps) {
-  const location = useLocation()
-
   return (
     <div className="tool-layout">
       <SideNav />
