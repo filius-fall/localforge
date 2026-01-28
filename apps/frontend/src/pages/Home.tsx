@@ -28,6 +28,12 @@ const fallbackTools: Tool[] = [
     description: 'Generate placeholder text with configurable length.',
     path: '/tools/lorem',
   },
+  {
+    slug: 'emoji',
+    name: 'Emoji',
+    description: 'Search, select, and copy emojis.',
+    path: '/tools/emoji',
+  },
 ]
 
 function Home() {

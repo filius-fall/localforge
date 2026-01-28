@@ -13,7 +13,7 @@ import QrGenerator from './pages/QrGenerator'
 import TextUtilities from './pages/TextUtilities'
 import TimestampTools from './pages/TimestampTools'
 import TimezoneConverter from './pages/TimezoneConverter'
-import LoremIpsumGenerator from './pages/LoremIpsumGenerator'
+import EmojiPicker from './pages/EmojiPicker'
 import './App.css'
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -73,6 +73,9 @@ function App() {
             </NavLink>
             <NavLink to="/tools/lorem" className={navLinkClass}>
               Lorem
+            </NavLink>
+            <NavLink to="/tools/emoji" className={navLinkClass}>
+              Emoji
             </NavLink>
             <NavLink to="/tools/notes" className={navLinkClass}>
               Notes

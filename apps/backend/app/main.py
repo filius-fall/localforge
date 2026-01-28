@@ -167,10 +167,10 @@ TOOLS = [
         "description": "Lightweight notes and code snippets stored locally.",
     },
     {
-        "slug": "lorem",
-        "name": "Lorem Ipsum",
-        "path": "/tools/lorem",
-        "description": "Generate placeholder text with configurable length.",
+        "slug": "emoji",
+        "name": "Emoji",
+        "description": "Search, select, and copy emojis.",
+        "path": "/tools/emoji",
     },
 ]
 
