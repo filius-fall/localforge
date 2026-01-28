@@ -77,6 +77,9 @@ function App() {
             <NavLink to="/tools/emoji" className={navLinkClass}>
               Emoji
             </NavLink>
+            <NavLink to="/tools/color-picker" className={navLinkClass}>
+              Color
+            </NavLink>
             <NavLink to="/tools/notes" className={navLinkClass}>
               Notes
             </NavLink>

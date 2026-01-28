@@ -172,6 +172,12 @@ TOOLS = [
         "description": "Search, select, and copy emojis.",
         "path": "/tools/emoji",
     },
+    {
+        "slug": "color-picker",
+        "name": "Color Picker",
+        "description": "Pick colors and copy hex/rgb values.",
+        "path": "/tools/color-picker",
+    },
 ]
 
 IMAGE_FORMATS = {
