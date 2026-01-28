@@ -137,9 +137,12 @@ async def create_decision(payload: DecisionCreate):
             if lookup.status_code == 404:
                 file_path = candidate_path
                 break
-            elif lookup.status_code != 200:
+            elif lookup.status_code == 200:
+                pass
+            else:
                 raise HTTPException(
-                    status_code=502, detail="Failed to check decision path on GitHub"
+                    status_code=502,
+                    detail=f"Failed to check decision path on GitHub (status: {lookup.status_code})",
                 )
 
     if not file_path:
