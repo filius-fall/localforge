@@ -10,113 +10,7 @@ function PaletteGenerator() {
   const [palette, setPalette] = useState<PaletteColor[]>([])
   const [previewUrl, setPreviewUrl] = useState<string>('')
   const [error, setError] = useState<string>('')
-  const [copied, setCopied] = useState<string>('')
 
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-
-  const rgbToHex = (r: number, g: number, b: number): string => {
-    const toHex = (value: number) => Math.round(value).toString(16).padStart(2, '0')
-    return `#${toHex(r)}${toHex(g)}${toHex(b)}`
-  }
-
-  const extractDominantColors = (canvas: HTMLCanvasElement, colorCount: number = 8): PaletteColor[] => {
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return []
-
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-    const pixels = imageData.data
-
-    const colorMap = new Map<string, { count: number, r: number, g: number, b: number }>()
-
-    for (let i = 0; i < pixels.length; i += 4) {
-      const r = pixels[i]
-      const g = pixels[i + 1]
-      const b = pixels[i + 2]
-      const a = pixels[i + 3]
-
-      if (a < 128) {
-        const key = `${r},${g},${b}`
-        const existing = colorMap.get(key)
-        if (existing) {
-          colorMap.set(key, { count: existing.count + 1, r, g, b })
-        } else {
-          colorMap.set(key, { count: 1, r, g, b })
-        }
-      }
-    }
-
-    const sortedColors = Array.from(colorMap.values())
-      .sort((a, b) => b.count - a.count)
-      .slice(0, colorCount)
-      .map((color) => ({
-        hex: rgbToHex(color.r, color.g, color.b),
-        rgb: `rgb(${color.r}, ${color.g}, ${color.b})`,
-      }))
-
-    return sortedColors
-  }
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    if (!file.type.startsWith('image/')) {
-      setError('Please upload a valid image file')
-      return
-    }
-
-    try {
-      setError('')
-      const reader = new FileReader()
-
-      reader.onload = (event) => {
-        const url = event.target?.result as string
-        setPreviewUrl(url)
-
-        const img = new Image()
-        img.onload = () => {
-          const canvas = canvasRef.current
-          if (!canvas) return
-
-          canvas.width = 200
-          canvas.height = 200
-
-          const ctx = canvas.getContext('2d')
-          if (!ctx) return
-
-          const scale = Math.min(200 / img.width, 200 / img.height)
-          ctx.drawImage(img, 0, 0, img.width * scale, img.height * scale)
-
-          const colors = extractDominantColors(canvas, 8)
-          setPalette(colors)
-        }
-        img.src = url
-      }
-
-      reader.readAsDataURL(file)
-    } catch {
-      setError('Failed to process image')
-    }
-  }
-
-  const copyColor = async (color: PaletteColor) => {
-    const success = await copyToClipboard(color.hex, (msg) => setError(msg))
-    if (success) {
-      setCopied('Copied!')
-      setTimeout(() => setCopied(''), 2000)
-    }
-  }
-
-  const clearPalette = () => {
-    setPalette([])
-    setPreviewUrl('')
-    setError('')
-  }
-
-function PaletteGenerator() {
-  const [palette, setPalette] = useState<PaletteColor[]>([])
-  const [previewUrl, setPreviewUrl] = useState<string>('')
-  const [error, setError] = useState<string>('')
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   const rgbToHex = (r: number, g: number, b: number): string => {
@@ -133,7 +27,6 @@ function PaletteGenerator() {
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
     const pixels = imageData.data
 
-    // Build color frequency map
     const colorMap = new Map<string, { count: number; r: number; g: number; b: number }>()
 
     for (let i = 0; i < pixels.length; i += 4) {
@@ -142,10 +35,8 @@ function PaletteGenerator() {
       const b = pixels[i + 2]
       const a = pixels[i + 3]
 
-      // Skip transparent pixels
       if (a < 128) continue
 
-      // Quantize colors (reduce to nearest 10 for better grouping)
       const quantizedR = Math.round(r / 10) * 10
       const quantizedG = Math.round(g / 10) * 10
       const quantizedB = Math.round(b / 10) * 10
@@ -160,7 +51,6 @@ function PaletteGenerator() {
       }
     }
 
-    // Sort by frequency and get top colors
     const sortedColors = Array.from(colorMap.values())
       .sort((a, b) => b.count - a.count)
       .slice(0, colorCount)
@@ -175,7 +65,6 @@ function PaletteGenerator() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       setError('Please upload a valid image file')
       return
@@ -194,7 +83,6 @@ function PaletteGenerator() {
           const canvas = canvasRef.current
           if (!canvas) return
 
-          // Set canvas size (limit to 200x200 for performance)
           const maxSize = 200
           let width = img.width
           let height = img.height
@@ -308,7 +196,6 @@ function PaletteGenerator() {
                       className="icon-button small"
                       type="button"
                       onClick={() => handleCopy(color.hex)}
-                      title="Copy hex"
                     >
                       📋
                     </button>
@@ -322,10 +209,9 @@ function PaletteGenerator() {
         {error && <p className="form-error">{error}</p>}
       </div>
 
-      {/* Hidden canvas for color extraction */}
       <canvas ref={canvasRef} style={{ display: 'none' }} />
-      </section>
-    )
-  }
-  
+    </section>
+  )
+}
+
 export default PaletteGenerator

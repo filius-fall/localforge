@@ -113,7 +113,7 @@ function BaseConverter() {
               id="input-number"
               type="text"
               value={input}
-              onChange={(e) => handleInputChange(e.target.value)}
+              onChange={(e) => setInput(e.target.value)}
               placeholder={`Enter number in base ${inputBase}`}
               className="input"
             />

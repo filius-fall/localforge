@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { apiUrl, getJson } from '../lib/api'
+import { getJson } from '../lib/api'
 import { copyToClipboard } from '../lib/clipboard'
 
 const STORAGE_KEY = 'localforge-decisions'
@@ -51,21 +51,22 @@ function DecisionLogger() {
        return
      }
 
-     const payload = {
-       title: title.trim(),
-       summary: summary.trim(),
-       context: context.trim(),
-       decision: decision.trim(),
-       consequences: consequences.trim(),
-       tags: tags.filter(t => t.trim()),
-       status: status || 'accepted',
-     }
+    const payload = {
+      title: title.trim(),
+      summary: summary.trim(),
+      context: context.trim(),
+      decision: decision.trim(),
+      consequences: consequences.trim(),
+      tags: tags.filter(t => t.trim()),
+      status: status || 'accepted',
+    }
 
-     try {
-       const data = await getJson('/api/decisions', {
-         method: 'POST',
-         body: JSON.stringify(payload),
-       })
+    try {
+      const data = await getJson<{ decision: Decision }>('/api/decisions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
 
        const savedDecision: Decision = data.decision
        const updated = [savedDecision, ...decisions]
