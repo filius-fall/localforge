@@ -190,6 +190,12 @@ TOOLS = [
         "description": "Generate fake profiles, addresses, and company data.",
         "path": "/tools/data-generator",
     },
+    {
+        "slug": "palette-generator",
+        "name": "Palette Generator",
+        "description": "Extract dominant color palettes from images.",
+        "path": "/tools/palette-generator",
+    },
 ]
 
 IMAGE_FORMATS = {

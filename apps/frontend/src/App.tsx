@@ -17,6 +17,7 @@ import EmojiPicker from './pages/EmojiPicker'
 import ColorPicker from './pages/ColorPicker'
 import MockApiServer from './pages/MockApiServer'
 import DataGenerator from './pages/DataGenerator'
+import PaletteGenerator from './pages/PaletteGenerator'
 import './App.css'
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -86,8 +87,11 @@ function App() {
             <NavLink to="/tools/mock-api" className={navLinkClass}>
               Mock API
             </NavLink>
-            <NavLink to="/tools/data-generator" className={navLinkClass}>
+             <NavLink to="/tools/data-generator" className={navLinkClass}>
               Data Generator
+            </NavLink>
+            <NavLink to="/tools/palette-generator" className={navLinkClass}>
+              Palette
             </NavLink>
             <NavLink to="/tools/notes" className={navLinkClass}>
               Notes
@@ -113,9 +117,10 @@ function App() {
              <Route path="/tools/lorem" element={<LoremIpsumGenerator />} />
              <Route path="/tools/emoji" element={<EmojiPicker />} />
              <Route path="/tools/color-picker" element={<ColorPicker />} />
-             <Route path="/tools/mock-api" element={<MockApiServer />} />
-             <Route path="/tools/data-generator" element={<DataGenerator />} />
-           </Routes>
+              <Route path="/tools/mock-api" element={<MockApiServer />} />
+              <Route path="/tools/data-generator" element={<DataGenerator />} />
+              <Route path="/tools/palette-generator" element={<PaletteGenerator />} />
+            </Routes>
         </main>
       </div>
     </div>
