@@ -73,6 +73,7 @@ function MockApiServer() {
   const [form, setForm] = useState<RouteForm>(defaultForm)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [error, setError] = useState<string>('')
+  const [loading, setLoading] = useState(false)
 
   const loadRoutes = async () => {
     try {
@@ -146,6 +147,7 @@ function MockApiServer() {
     }
 
     try {
+      setLoading(true)
       if (editingId) {
         const response = await fetch(apiUrl(`/api/mock/routes/${editingId}`), {
           method: 'PUT',
@@ -154,6 +156,7 @@ function MockApiServer() {
         })
         if (!response.ok) {
           setError(`Failed to update route: ${response.status}`)
+          setLoading(false)
           return
         }
         const data = (await response.json()) as MockRouteResponse
@@ -167,6 +170,7 @@ function MockApiServer() {
         })
         if (!response.ok) {
           setError(`Failed to create route: ${response.status}`)
+          setLoading(false)
           return
         }
         const data = (await response.json()) as MockRouteResponse
@@ -178,6 +182,8 @@ function MockApiServer() {
       setError('')
     } catch {
       setError('Failed to save route')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -314,15 +320,30 @@ function MockApiServer() {
           </div>
 
           <div className="button-row">
-            <button className="button primary" type="button" onClick={handleSubmit}>
-              {editingId ? 'Update Route' : 'Create Route'}
+            <button
+              className="button primary"
+              type="button"
+              onClick={handleSubmit}
+              disabled={loading}
+            >
+              {loading ? <span className="loading-spinner">Saving</span> : (editingId ? 'Update Route' : 'Create Route')}
             </button>
             {editingId && (
-              <button className="button secondary" type="button" onClick={resetForm}>
+              <button
+                className="button secondary"
+                type="button"
+                onClick={resetForm}
+                disabled={loading}
+              >
                 Cancel
               </button>
             )}
           </div>
+          {loading && (
+            <p className="form-status">
+              <span className="loading-spinner">Saving route</span>
+            </p>
+          )}
         </div>
 
         <div className="tool-section">

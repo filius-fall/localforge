@@ -29,6 +29,7 @@ function DecisionLogger() {
    const [status, setStatus] = useState<string>('accepted')
    const [decisions, setDecisions] = useState<Decision[]>([])
    const [error, setError] = useState<string>('')
+   const [loading, setLoading] = useState(false)
 
    // Load decisions from localStorage on mount
    useEffect(() => {
@@ -43,52 +44,55 @@ function DecisionLogger() {
      }
    }, [])
 
-   const saveDecision = async () => {
-     setError('')
+    const saveDecision = async () => {
+      setError('')
 
-     if (!title.trim() || !decision.trim()) {
-       setError('Title and decision are required')
-       return
+      if (!title.trim() || !decision.trim()) {
+        setError('Title and decision are required')
+        return
+      }
+
+     const payload = {
+       title: title.trim(),
+       summary: summary.trim(),
+       context: context.trim(),
+       decision: decision.trim(),
+       consequences: consequences.trim(),
+       tags: tags.filter(t => t.trim()),
+       status: status || 'accepted',
      }
 
-    const payload = {
-      title: title.trim(),
-      summary: summary.trim(),
-      context: context.trim(),
-      decision: decision.trim(),
-      consequences: consequences.trim(),
-      tags: tags.filter(t => t.trim()),
-      status: status || 'accepted',
+     try {
+       setLoading(true)
+       const data = await getJson<{ decision: Decision }>('/api/decisions', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify(payload),
+       })
+
+        const savedDecision: Decision = data.decision
+        const updated = [savedDecision, ...decisions]
+        setDecisions(updated)
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+
+        setTitle('')
+        setSummary('')
+        setContext('')
+        setDecision('')
+        setConsequences('')
+        setTags([])
+        setStatus('accepted')
+        setError('')
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message)
+        } else {
+          setError('Failed to save decision')
+        }
+      } finally {
+        setLoading(false)
+      }
     }
-
-    try {
-      const data = await getJson<{ decision: Decision }>('/api/decisions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-
-       const savedDecision: Decision = data.decision
-       const updated = [savedDecision, ...decisions]
-       setDecisions(updated)
-       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
-
-       setTitle('')
-       setSummary('')
-       setContext('')
-       setDecision('')
-       setConsequences('')
-       setTags([])
-       setStatus('accepted')
-       setError('')
-     } catch (err) {
-       if (err instanceof Error) {
-         setError(err.message)
-       } else {
-         setError('Failed to save decision')
-       }
-     }
-   }
 
   const handleCopy = async (text: string) => {
     if (!text) return
@@ -207,10 +211,15 @@ function DecisionLogger() {
             className="button primary"
             type="button"
             onClick={saveDecision}
-            disabled={!title.trim() || !decision.trim()}
+            disabled={!title.trim() || !decision.trim() || loading}
           >
-            Save Decision
+            {loading ? <span className="loading-spinner">Saving</span> : 'Save Decision'}
           </button>
+          {loading && (
+            <p className="form-status">
+              <span className="loading-spinner">Saving to GitHub</span>
+            </p>
+          )}
         </div>
 
         {decisions.length > 0 && (

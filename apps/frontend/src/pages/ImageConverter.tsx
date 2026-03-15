@@ -136,8 +136,16 @@ function ImageConverter() {
               </select>
             </label>
             <div className="action-row">
-              <button className="button primary" type="submit" disabled={loading}>
-                Convert & Download
+              <button
+                className="button primary"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="loading-spinner">Converting</span>
+                ) : (
+                  'Convert & Download'
+                )}
               </button>
             </div>
           </form>
@@ -167,8 +175,16 @@ function ImageConverter() {
               </label>
             </div>
             <div className="action-row">
-              <button className="button primary" type="submit" disabled={loading}>
-                Resize & Download
+              <button
+                className="button primary"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="loading-spinner">Resizing</span>
+                ) : (
+                  'Resize & Download'
+                )}
               </button>
             </div>
           </form>
@@ -212,8 +228,16 @@ function ImageConverter() {
               </label>
             </div>
             <div className="action-row">
-              <button className="button primary" type="submit" disabled={loading}>
-                Crop & Download
+              <button
+                className="button primary"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="loading-spinner">Cropping</span>
+                ) : (
+                  'Crop & Download'
+                )}
               </button>
             </div>
           </form>
@@ -240,8 +264,16 @@ function ImageConverter() {
               />
             </label>
             <div className="action-row">
-              <button className="button primary" type="submit" disabled={loading}>
-                Apply Watermark
+              <button
+                className="button primary"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="loading-spinner">Applying</span>
+                ) : (
+                  'Apply Watermark'
+                )}
               </button>
             </div>
           </form>
@@ -261,8 +293,16 @@ function ImageConverter() {
             }}
           >
             <div className="action-row">
-              <button className="button primary" type="submit" disabled={loading}>
-                Strip Metadata
+              <button
+                className="button primary"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="loading-spinner">Stripping</span>
+                ) : (
+                  'Strip Metadata'
+                )}
               </button>
             </div>
           </form>
@@ -275,6 +315,11 @@ function ImageConverter() {
               <img src={previewUrl} alt="Selected preview" />
             </div>
           </div>
+        )}
+        {loading && (
+          <p className="form-status">
+            <span className="loading-spinner">Processing image</span>
+          </p>
         )}
         {status && <p className="form-status">{status}</p>}
         {error && <p className="form-error">{error}</p>}

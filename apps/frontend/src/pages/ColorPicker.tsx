@@ -17,12 +17,13 @@ const rgbToHex = (rgb: RgbColor) => {
 
 const hexToRgb = (hexValue: string): RgbColor | null => {
   const cleanHex = hexValue.replace('#', '').trim()
-  if (!/^[0-9a-fA-F]{3}$|^[0-9a-fA-F]{6}$/.test(cleanHex)) {
+  const isValidHex = /^[0-9a-fA-F]{3}$/.test(cleanHex) || /^[0-9a-fA-F]{6}$/.test(cleanHex)
+  if (!isValidHex) {
     return null
   }
 
   const expanded =
-    cleanHex.length === 3
+    cleanHex.length ===3
       ? cleanHex
           .split('')
           .map((char) => char + char)
@@ -38,9 +39,11 @@ const hexToRgb = (hexValue: string): RgbColor | null => {
 
 function ColorPicker() {
   const [hex, setHex] = useState('#00ff00')
-  const [rgb, setRgb] = useState<RgbColor>({ r: 0, g: 255, b: 0 })
+  const [rgb, setRgb] = useState<RgbColor>({ r: 0, g:255, b: 0 })
   const [error, setError] = useState<string>('')
   const [copied, setCopied] = useState<string>('')
+  const [hexCopied, setHexCopied] = useState<string>('')
+  const [rgbCopied, setRgbCopied] = useState<string>('')
 
   const handleHexChange = (value: string) => {
     const nextHex = value.startsWith('#') ? value : `#${value}`
@@ -72,8 +75,8 @@ function ColorPicker() {
   const handleCopyHex = async () => {
     const success = await copyToClipboard(hex, (msg) => setError(msg))
     if (success) {
-      setCopied('Copied!')
-      setTimeout(() => setCopied(''), 2000)
+      setHexCopied('Copied!')
+      setTimeout(() => setHexCopied(''), 2000)
     }
   }
 
@@ -81,8 +84,8 @@ function ColorPicker() {
     const rgbText = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`
     const success = await copyToClipboard(rgbText, (msg) => setError(msg))
     if (success) {
-      setCopied('Copied!')
-      setTimeout(() => setCopied(''), 2000)
+      setRgbCopied('Copied!')
+      setTimeout(() => setRgbCopied(''), 2000)
     }
   }
 
@@ -113,10 +116,10 @@ function ColorPicker() {
 
           <HexColorPicker color={hex} onChange={handleHexChange} />
 
-          <div className="output-card">
-            <p className="preview-label">RGB Value</p>
-            <pre>{`rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`}</pre>
-          </div>
+           <div className="output-card">
+             <p className="preview-label">RGB Value</p>
+             <pre>{`rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`}</pre>
+           </div>
 
           <button
             className="button primary"
@@ -126,6 +129,7 @@ function ColorPicker() {
           >
             Copy Hex
           </button>
+          {hexCopied && <p className="form-status">{hexCopied}</p>}
         </div>
 
         <div className="tool-section">
@@ -182,10 +186,10 @@ function ColorPicker() {
           >
             Copy RGB
           </button>
+          {rgbCopied && <p className="form-status">{rgbCopied}</p>}
         </div>
 
         {error && <p className="form-error">{error}</p>}
-        {copied && <p className="form-status">{copied}</p>}
       </div>
     </section>
   )

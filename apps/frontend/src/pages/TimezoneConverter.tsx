@@ -136,19 +136,29 @@ function TimezoneConverter() {
             </label>
           </div>
           <div className="action-row">
-            <button className="button primary" type="submit" disabled={loading}>
-              {loading ? 'Converting...' : 'Convert'}
+            <button
+              className="button primary"
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? <span className="loading-spinner">Converting</span> : 'Convert'}
             </button>
             <button
               className="button ghost"
               type="button"
               onClick={handleSwap}
+              disabled={loading}
             >
               Swap zones
             </button>
           </div>
+          {loading && (
+            <p className="form-status">
+              <span className="loading-spinner">Converting time zone</span>
+            </p>
+          )}
+          {error && <p className="form-error">{error}</p>}
         </form>
-        {error && <p className="form-error">{error}</p>}
         {result && (
           <div className="result-card">
             <p className="result-label">Converted time</p>

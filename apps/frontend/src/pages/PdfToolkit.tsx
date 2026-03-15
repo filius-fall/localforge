@@ -162,8 +162,16 @@ function PdfToolkit() {
               />
             </label>
             <div className="action-row">
-              <button className="button primary" type="submit" disabled={loading}>
-                Merge & Download
+              <button
+                className="button primary"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="loading-spinner">Merging</span>
+                ) : (
+                  'Merge & Download'
+                )}
               </button>
             </div>
           </form>
@@ -191,8 +199,16 @@ function PdfToolkit() {
               </label>
             </div>
             <div className="action-row">
-              <button className="button primary" type="submit" disabled={loading}>
-                Split & Download
+              <button
+                className="button primary"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="loading-spinner">Splitting</span>
+                ) : (
+                  'Split & Download'
+                )}
               </button>
             </div>
           </form>
@@ -231,8 +247,16 @@ function PdfToolkit() {
               </label>
             </div>
             <div className="action-row">
-              <button className="button primary" type="submit" disabled={loading}>
-                Rotate & Download
+              <button
+                className="button primary"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="loading-spinner">Rotating</span>
+                ) : (
+                  'Rotate & Download'
+                )}
               </button>
             </div>
           </form>
@@ -264,13 +288,26 @@ function PdfToolkit() {
               </label>
             </div>
             <div className="action-row">
-              <button className="button primary" type="submit" disabled={loading}>
-                Optimize & Download
+              <button
+                className="button primary"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="loading-spinner">Optimizing</span>
+                ) : (
+                  'Optimize & Download'
+                )}
               </button>
             </div>
           </form>
         </div>
 
+        {loading && (
+          <p className="form-status">
+            <span className="loading-spinner">Processing PDF</span>
+          </p>
+        )}
         {status && <p className="form-status">{status}</p>}
         {error && <p className="form-error">{error}</p>}
       </div>

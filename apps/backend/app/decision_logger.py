@@ -5,8 +5,12 @@ import uuid
 from datetime import datetime, timezone
 
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter()
 
@@ -78,35 +82,22 @@ tags: [{tags_str}]
 
 @router.get("/api/decisions/health")
 async def decision_health() -> dict:
+    """Health check endpoint that doesn't expose sensitive configuration details."""
     try:
         owner = os.getenv("DECISION_LOG_OWNER")
         repo = os.getenv("DECISION_LOG_REPO")
-        if not owner or not repo:
-            return {
-                "configured": False,
-                "missing": [
-                    k
-                    for k, v in [
-                        ("DECISION_LOG_OWNER", owner),
-                        ("DECISION_LOG_REPO", repo),
-                    ]
-                    if not v
-                ],
-            }
-        return {
-            "configured": True,
-            "owner": owner,
-            "repo": repo,
-        }
+        configured = bool(owner and repo)
+        return {"configured": configured}
     except Exception:
-        return {
-            "configured": False,
-            "missing": ["DECISION_LOG_OWNER", "DECISION_LOG_REPO"],
-        }
+        return {"configured": False}
 
 
 @router.post("/api/decisions", response_model=dict)
-async def create_decision(payload: DecisionCreate):
+@limiter.limit("10/minute")
+async def create_decision(
+    request: Request,
+    payload: DecisionCreate,
+):
     owner = _require_env("DECISION_LOG_OWNER")
     repo = _require_env("DECISION_LOG_REPO")
     branch = os.getenv("DECISION_LOG_BRANCH", "main")
