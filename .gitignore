@@ -1,6 +1,6 @@
 # LocalForge ignores
 .sisyphus/
-
+*.md
 # Python
 __pycache__/
 *.py[cod]
