@@ -5,7 +5,7 @@
 
 set -e
 
-COMPOSE_FILE="docker-compose.server.yml"
+COMPOSE_FILE="docker compose.server.yml"
 
 echo "======================================"
 echo "  Updating LocalForge"
@@ -25,12 +25,12 @@ echo "✓ Code updated"
 echo ""
 
 echo "Rebuilding Docker images..."
-docker-compose -f "$COMPOSE_FILE" build
+docker compose -f "$COMPOSE_FILE" build
 echo "✓ Images rebuilt"
 echo ""
 
 echo "Restarting services..."
-docker-compose -f "$COMPOSE_FILE" up -d
+docker compose -f "$COMPOSE_FILE" up -d
 echo "✓ Services restarted"
 echo ""
 
