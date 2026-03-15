@@ -48,6 +48,41 @@ npm install
 npm run dev
 ```
 
+### System Dependencies (Required for local development only)
+
+Some features require external system binaries. Install these before running the backend:
+
+**Ubuntu/Debian:**
+```bash
+sudo apt update
+sudo apt install -y ghostscript libreoffice pandoc wkhtmltopdf ffmpeg
+```
+
+**macOS:**
+```bash
+brew install ghostscript libreoffice pandoc wkhtmltopdf ffmpeg
+```
+
+**Note:** Docker users don't need to install these - they're already included in the Docker image.
+
+### Docker (Optional)
+
+Use Docker for a fully containerized setup with all dependencies pre-installed.
+
+**Development mode:**
+```bash
+docker compose up -d --build
+# Access frontend at http://localhost:5173
+# Access backend at http://localhost:8000
+```
+
+**Production mode:**
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+# Access frontend at http://localhost:80
+# Access backend at http://localhost:8000
+```
+
 ## Testing
 
 ```bash
@@ -151,7 +186,11 @@ DECISION_LOG_BRANCH=main
 
 **If using Docker**: Environment variables are loaded from `.env` file automatically. Simply run:
 ```bash
+# For development (hot reload)
 docker compose up -d --build
+
+# For production (optimized build)
+docker compose -f docker-compose.prod.yml up -d --build
 ```
 
 
@@ -224,30 +263,10 @@ export DECISION_LOG_BRANCH="main"
 **Important**: Never commit `.env` file to git - it contains secrets. Use `.env.example` as a template only.
 
 ### 3. Docker Compose file
-Create `docker-compose.yml`:
-```yaml
-version: "3.9"
-services:
-  backend:
-    build: ./apps/backend
-    container_name: localforge-backend
-    env_file:
-      - .env
-    ports:
-      - "8000:8000"
 
-  frontend:
-    build: ./apps/frontend
-    container_name: localforge-frontend
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
-```
-
-Start services:
+The repository includes `docker-compose.prod.yml` for production deployment. Start services:
 ```bash
-docker compose up -d --build
+docker compose -f docker-compose.prod.yml up -d --build
 ```
 
 ### 4. Add domain and configure Nginx

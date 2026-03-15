@@ -107,8 +107,13 @@ function NetworkTools() {
         <div className="tool-section">
           <h2>Ping</h2>
           <div className="action-row">
-            <button className="button primary" type="button" disabled={loading} onClick={handlePing}>
-              Run Ping
+            <button
+              className="button primary"
+              type="button"
+              disabled={loading}
+              onClick={handlePing}
+            >
+              {loading ? <span className="loading-spinner">Pinging</span> : 'Run Ping'}
             </button>
           </div>
           {pingResult && <pre className="output-box">{pingResult}</pre>}
@@ -130,8 +135,13 @@ function NetworkTools() {
             </label>
           </div>
           <div className="action-row">
-            <button className="button primary" type="button" disabled={loading} onClick={handleDns}>
-              Lookup DNS
+            <button
+              className="button primary"
+              type="button"
+              disabled={loading}
+              onClick={handleDns}
+            >
+              {loading ? <span className="loading-spinner">Looking up</span> : 'Lookup DNS'}
             </button>
           </div>
           {dnsResult && (
@@ -152,8 +162,13 @@ function NetworkTools() {
             </label>
           </div>
           <div className="action-row">
-            <button className="button primary" type="button" disabled={loading} onClick={handlePort}>
-              Check Port
+            <button
+              className="button primary"
+              type="button"
+              disabled={loading}
+              onClick={handlePort}
+            >
+              {loading ? <span className="loading-spinner">Checking</span> : 'Check Port'}
             </button>
           </div>
           {portResult && <p className="form-status">Port is {portResult}</p>}
@@ -162,8 +177,13 @@ function NetworkTools() {
         <div className="tool-section">
           <h2>IP Info</h2>
           <div className="action-row">
-            <button className="button primary" type="button" disabled={loading} onClick={handleIpInfo}>
-              Fetch IP Info
+            <button
+              className="button primary"
+              type="button"
+              disabled={loading}
+              onClick={handleIpInfo}
+            >
+              {loading ? <span className="loading-spinner">Fetching</span> : 'Fetch IP Info'}
             </button>
           </div>
           {ipInfo && (
@@ -178,6 +198,11 @@ function NetworkTools() {
           )}
         </div>
 
+        {loading && (
+          <p className="form-status">
+            <span className="loading-spinner">Processing request</span>
+          </p>
+        )}
         {error && <p className="form-error">{error}</p>}
       </div>
     </section>

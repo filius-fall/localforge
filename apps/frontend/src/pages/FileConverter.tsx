@@ -89,16 +89,20 @@ function FileConverter() {
             }}
           >
             <label className="field">
-              <span>DOCX file</span>
+              <span>XLSX file</span>
               <input
                 type="file"
-                accept=".docx"
-                onChange={(event) => setDocxFile(event.target.files?.[0] ?? null)}
+                accept=".xlsx"
+                onChange={(event) => setXlsxFile(event.target.files?.[0] ?? null)}
               />
             </label>
             <div className="action-row">
-              <button className="button primary" type="submit" disabled={loading}>
-                Convert to PDF
+              <button
+                className="button primary"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? <span className="loading-spinner">Converting</span> : 'Convert to CSV'}
               </button>
             </div>
           </form>
@@ -122,8 +126,12 @@ function FileConverter() {
               />
             </label>
             <div className="action-row">
-              <button className="button primary" type="submit" disabled={loading}>
-                Convert to DOCX
+              <button
+                className="button primary"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? <span className="loading-spinner">Converting</span> : 'Convert to PDF'}
               </button>
             </div>
           </form>
@@ -147,8 +155,12 @@ function FileConverter() {
               />
             </label>
             <div className="action-row">
-              <button className="button primary" type="submit" disabled={loading}>
-                Convert to XLSX
+              <button
+                className="button primary"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? <span className="loading-spinner">Converting</span> : 'Convert to DOCX'}
               </button>
             </div>
           </form>
@@ -172,8 +184,12 @@ function FileConverter() {
               />
             </label>
             <div className="action-row">
-              <button className="button primary" type="submit" disabled={loading}>
-                Convert to CSV
+              <button
+                className="button primary"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? <span className="loading-spinner">Converting</span> : 'Convert to XLSX'}
               </button>
             </div>
           </form>
@@ -197,13 +213,22 @@ function FileConverter() {
               />
             </label>
             <div className="action-row">
-              <button className="button primary" type="submit" disabled={loading}>
-                Convert to PDF
+              <button
+                className="button primary"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? <span className="loading-spinner">Converting</span> : 'Convert to PDF'}
               </button>
             </div>
           </form>
         </div>
 
+        {loading && (
+          <p className="form-status">
+            <span className="loading-spinner">Converting file</span>
+          </p>
+        )}
         {status && <p className="form-status">{status}</p>}
         {error && <p className="form-error">{error}</p>}
       </div>

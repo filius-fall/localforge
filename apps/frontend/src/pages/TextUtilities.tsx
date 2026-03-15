@@ -19,6 +19,7 @@ function TextUtilities() {
   const [jsonOutput, setJsonOutput] = useState('')
   const [csvOutput, setCsvOutput] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   const dedupedLines = useMemo(() => {
     const lines = dedupeInput.split('\n').map((line) => line.trim())
@@ -45,25 +46,31 @@ function TextUtilities() {
     }
   }, [regexInput, regexPattern, regexFlags])
 
-  const handleJsonToCsv = () => {
+  const handleJsonToCsv = async () => {
     setError(null)
+    setLoading(true)
     try {
       const data = JSON.parse(jsonInput)
       const csv = Papa.unparse(data)
       setCsvOutput(csv)
     } catch (err) {
       setError('Invalid JSON input.')
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleCsvToJson = () => {
+  const handleCsvToJson = async () => {
     setError(null)
+    setLoading(true)
     const parsed = Papa.parse(csvInput, { header: true })
     if (parsed.errors.length) {
       setError('Invalid CSV input.')
+      setLoading(false)
       return
     }
     setJsonOutput(JSON.stringify(parsed.data, null, 2))
+    setLoading(false)
   }
 
   return (
@@ -149,13 +156,28 @@ function TextUtilities() {
             </label>
           </div>
           <div className="action-row">
-            <button className="button primary" type="button" onClick={handleJsonToCsv}>
-              JSON → CSV
+            <button
+              className="button primary"
+              type="button"
+              onClick={handleJsonToCsv}
+              disabled={loading}
+            >
+              {loading ? <span className="loading-spinner">Converting</span> : 'JSON → CSV'}
             </button>
-            <button className="button ghost" type="button" onClick={handleCsvToJson}>
-              CSV → JSON
+            <button
+              className="button ghost"
+              type="button"
+              onClick={handleCsvToJson}
+              disabled={loading}
+            >
+              {loading ? <span className="loading-spinner">Converting</span> : 'CSV → JSON'}
             </button>
           </div>
+          {loading && (
+            <p className="form-status">
+              <span className="loading-spinner">Converting</span>
+            </p>
+          )}
           <div className="output-grid">
             <div className="output-card">
               <p className="preview-label">CSV output</p>

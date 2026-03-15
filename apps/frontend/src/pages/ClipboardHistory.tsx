@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { readFromClipboard } from '../lib/clipboard'
 
 type ClipboardEntry = {
@@ -22,14 +22,15 @@ const saveEntries = (entries: ClipboardEntry[]) => {
    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries))
 }
 
-function ClipboardHistory() {
-   const [entries, setEntries] = useState<ClipboardEntry[]>([])
+ function ClipboardHistory() {
+   const [entries, setEntries] = useState<ClipboardEntry[]>(loadEntries())
    const [manualText, setManualText] = useState('')
    const [error, setError] = useState<string | null>(null)
-
-   useEffect(() => {
-     setEntries(loadEntries())
-   }, [])
+   const [isSecureContext] = useState<boolean>(
+     location.protocol === 'https:' ||
+       location.hostname === 'localhost' ||
+       location.hostname === '127.0.0.1'
+   )
 
    const addEntry = (text: string) => {
      const entry = {
@@ -71,16 +72,26 @@ function ClipboardHistory() {
         <p className="tool-subtitle">
           Capture clipboard entries locally with quick recall.
         </p>
-      </div>
-      <div className="tool-panel">
+       </div>
+       <div className="tool-panel">
+         {!isSecureContext && (
+           <div className="form-warning">
+             <p>
+               <strong>⚠️ Clipboard Access Limited</strong>
+               <br />
+              This app requires HTTPS or localhost for clipboard functionality. Access via{' '}
+               <code>https://</code> or <code>http://localhost</code> to enable full clipboard features.
+            </p>
+          </div>
+        )}
         <div className="action-row">
-          <button className="button primary" type="button" onClick={handleReadClipboard}>
-            Capture Clipboard
-          </button>
-          <button className="button ghost" type="button" onClick={handleClear}>
-            Clear History
-          </button>
-        </div>
+           <button className="button primary" type="button" onClick={handleReadClipboard}>
+             Capture Clipboard
+           </button>
+           <button className="button ghost" type="button" onClick={handleClear}>
+             Clear History
+           </button>
+         </div>
         <label className="field">
           <span>Manual entry</span>
           <textarea value={manualText} onChange={(event) => setManualText(event.target.value)} />

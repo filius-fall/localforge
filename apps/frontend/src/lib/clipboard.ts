@@ -17,47 +17,74 @@ export async function copyToClipboardFallback(text: string): Promise<boolean> {
   }
 }
 
-export async function copyToClipboard(
-  text: string,
-  onError?: (error: string) => void
-): Promise<boolean> {
-  if (!text) return false
+ export async function copyToClipboard(
+   text: string,
+   onError?: (error: string) => void
+ ): Promise<boolean> {
+   if (!text) return false
 
-  if (navigator?.clipboard?.writeText) {
-    try {
-      await navigator.clipboard.writeText(text)
-      return true
-    } catch {
-      const fallbackSuccess = await copyToClipboardFallback(text)
-      if (!fallbackSuccess && onError) {
-        onError('Clipboard unavailable. Use HTTPS or localhost.')
-      }
-      return fallbackSuccess
-    }
-  }
+   if (navigator?.clipboard?.writeText) {
+     try {
+       await navigator.clipboard.writeText(text)
+       return true
+     } catch (_err) {
+       const fallbackSuccess = await copyToClipboardFallback(text)
+       if (!fallbackSuccess && onError) {
+         if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+           onError(
+             'Clipboard unavailable. Access this app via HTTPS or localhost to enable clipboard functionality.'
+           )
+         } else {
+           onError('Clipboard unavailable. Try manually copying the text.')
+         }
+       }
+       return fallbackSuccess
+     }
+   }
 
-  const fallbackSuccess = await copyToClipboardFallback(text)
-  if (!fallbackSuccess && onError) {
-    onError('Clipboard unavailable. Use HTTPS or localhost.')
-  }
-  return fallbackSuccess
-}
+   const fallbackSuccess = await copyToClipboardFallback(text)
+   if (!fallbackSuccess && onError) {
+     if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+       onError(
+         'Clipboard unavailable. Access this app via HTTPS or localhost to enable clipboard functionality.'
+       )
+     } else {
+       onError('Clipboard unavailable. Try manually copying the text.')
+     }
+   }
+   return fallbackSuccess
+ }
 
-export async function readFromClipboard(
-  onError?: (error: string) => void
-): Promise<string | null> {
-  if (!navigator.clipboard) {
-    const error = 'Clipboard API not available in this browser.'
-    if (onError) onError(error)
-    return null
-  }
+ export async function readFromClipboard(
+   onError?: (error: string) => void
+ ): Promise<string | null> {
+   if (!navigator.clipboard) {
+     let error = 'Clipboard API not available in this browser.'
 
-  try {
-    const text = await navigator.clipboard.readText()
-    return text
-  } catch (err) {
-    const error = 'Clipboard permission denied. Use HTTPS or localhost.'
-    if (onError) onError(error)
-    return null
-  }
-}
+     if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+       error =
+         'Clipboard API requires secure context (HTTPS or localhost). Access this app via HTTPS or localhost to enable clipboard functionality.'
+     }
+
+     if (onError) onError(error)
+     return null
+   }
+
+   try {
+     const text = await navigator.clipboard.readText()
+     return text
+   } catch (err) {
+     let error = 'Failed to read from clipboard.'
+
+     if (err instanceof Error && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError')) {
+       error =
+         'Clipboard permission denied. Please grant clipboard permissions in your browser settings.'
+     } else if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+       error =
+         'Clipboard access may be restricted over HTTP. Access this app via HTTPS or localhost.'
+     }
+
+     if (onError) onError(error)
+     return null
+   }
+ }

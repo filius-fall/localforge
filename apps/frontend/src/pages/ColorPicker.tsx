@@ -37,21 +37,6 @@ const hexToRgb = (hexValue: string): RgbColor | null => {
   return { r, g, b }
 }
 
-  const expanded =
-    cleanHex.length === 3
-      ? cleanHex
-          .split('')
-          .map((char) => char + char)
-          .join('')
-      : cleanHex
-
-  const r = parseInt(expanded.slice(0, 2), 16)
-  const g = parseInt(expanded.slice(2, 4), 16)
-  const b = parseInt(expanded.slice(4, 6), 16)
-
-  return { r, g, b }
-}
-
 function ColorPicker() {
   const [hex, setHex] = useState('#00ff00')
   const [rgb, setRgb] = useState<RgbColor>({ r: 0, g:255, b: 0 })

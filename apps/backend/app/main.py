@@ -21,8 +21,15 @@ from fastapi.responses import PlainTextResponse, Response
 from PIL import Image, ImageDraw, ImageFont
 from pydantic import BaseModel, Field
 from pypdf import PdfReader, PdfWriter
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from app.decision_logger import router as decision_logger_router
+
+# Constants for security
+MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
+MAX_WATERMARK_TEXT_LENGTH = 1000
 
 
 logger = logging.getLogger("localforge")
@@ -34,12 +41,33 @@ if not logger.handlers:
 logger.setLevel(logging.INFO)
 
 
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="LocalForge API", version="0.2.0")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.include_router(decision_logger_router)
 
 
 @app.middleware("http")
-async def add_noindex_header(request: Request, call_next):
+async def add_security_headers(request: Request, call_next):
+    """Add security headers and file size limit check."""
+    # Check file size for upload endpoints
+    content_length = request.headers.get("content-length")
+    if content_length:
+        try:
+            size = int(content_length)
+            if size > MAX_FILE_SIZE:
+                logger.warning(
+                    "request.file_size_exceeded size=%d max=%d", size, MAX_FILE_SIZE
+                )
+                return Response(
+                    status_code=413,
+                    content=b"File too large. Maximum size is 50MB.",
+                )
+        except ValueError:
+            pass
+
     request_id = uuid.uuid4().hex[:12]
     start_time = time.perf_counter()
     logger.info(
@@ -48,6 +76,7 @@ async def add_noindex_header(request: Request, call_next):
         request.method,
         request.url.path,
     )
+
     try:
         response = await call_next(request)
     except Exception:
@@ -58,9 +87,16 @@ async def add_noindex_header(request: Request, call_next):
             request.url.path,
         )
         raise
+
     duration_ms = (time.perf_counter() - start_time) * 1000
+
+    # Add security headers
     response.headers["X-Robots-Tag"] = "noindex, nofollow"
     response.headers["X-Request-Id"] = request_id
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+
     logger.info(
         "request.complete id=%s method=%s path=%s status=%s duration_ms=%.2f",
         request_id,
@@ -81,8 +117,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["Content-Type", "Authorization", "X-Request-ID"],
 )
 
 
@@ -263,6 +299,14 @@ def _safe_port(port: int) -> int:
     return port
 
 
+def _sanitize_filename(filename: str) -> str:
+    """Sanitize filename to prevent header injection and path traversal."""
+    # Remove characters that could be used for header injection or path traversal
+    sanitized = re.sub(r'[\\/"\'\n\r\x00]', "", filename)
+    # Limit length to prevent buffer issues
+    return sanitized[:255]
+
+
 def _ensure_binary(name: str) -> str:
     path = shutil.which(name)
     if not path:
@@ -282,9 +326,7 @@ def _find_libreoffice() -> str:
     logger.error("dependency.missing name=libreoffice")
     raise HTTPException(
         status_code=501,
-        detail="LibreOffice is required for this conversion. "
-        "If running in Docker, rebuild the image with 'docker compose build --no-cache'. "
-        "For local dev, install LibreOffice: sudo apt install libreoffice-writer",
+        detail="LibreOffice is required for this conversion. Please check the documentation for installation instructions.",
     )
 
 
@@ -295,14 +337,17 @@ def _run_command(args: list[str], error_message: str) -> None:
             args, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
     except FileNotFoundError as exc:
+        logger.error("dependency.missing name=%s", args[0])
         raise HTTPException(
-            status_code=501, detail=f"Missing system dependency: {args[0]}"
+            status_code=501, detail="Required system dependency is not available."
         ) from exc
     except subprocess.CalledProcessError as exc:
         stderr = exc.stderr.strip() or exc.stdout.strip()
         logger.error("command.failed tool=%s error=%s", args[0], stderr)
+        # Use generic error message to avoid information disclosure
         raise HTTPException(
-            status_code=400, detail=f"{error_message} {stderr}"
+            status_code=400,
+            detail="Processing failed. Please check your input and try again.",
         ) from exc
 
 
@@ -312,10 +357,11 @@ async def _save_upload(file: UploadFile, path: Path) -> None:
 
 
 def _response_from_bytes(data: bytes, media_type: str, filename: str) -> Response:
+    sanitized_filename = _sanitize_filename(filename)
     return Response(
         content=data,
         media_type=media_type,
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={"Content-Disposition": f'attachment; filename="{sanitized_filename}"'},
     )
 
 
@@ -451,7 +497,11 @@ async def convert_timezone(payload: TimezoneConvertRequest) -> TimezoneConvertRe
 
 
 @app.post("/api/pdf/merge")
-async def merge_pdf(files: list[UploadFile] = File(...)) -> Response:
+@limiter.limit("10/minute")
+async def merge_pdf(
+    request: Request,
+    files: list[UploadFile] = File(...),
+) -> Response:
     logger.info("pdf.merge count=%s", len(files))
     if len(files) < 2:
         raise HTTPException(status_code=400, detail="Upload at least two PDFs.")
@@ -473,7 +523,9 @@ async def merge_pdf(files: list[UploadFile] = File(...)) -> Response:
 
 
 @app.post("/api/pdf/split")
+@limiter.limit("10/minute")
 async def split_pdf(
+    request: Request,
     file: UploadFile = File(...),
     ranges: str | None = Form(None),
 ) -> Response:
@@ -501,7 +553,9 @@ async def split_pdf(
 
 
 @app.post("/api/pdf/rotate")
+@limiter.limit("10/minute")
 async def rotate_pdf(
+    request: Request,
     file: UploadFile = File(...),
     angle: int = Form(...),
     pages: str | None = Form(None),
@@ -535,7 +589,9 @@ async def rotate_pdf(
 
 
 @app.post("/api/pdf/optimize")
+@limiter.limit("10/minute")
 async def optimize_pdf(
+    request: Request,
     file: UploadFile = File(...),
     level: str = Form("screen"),
 ) -> Response:
@@ -568,7 +624,11 @@ async def optimize_pdf(
 
 
 @app.post("/api/convert/docx-to-pdf")
-async def docx_to_pdf(file: UploadFile = File(...)) -> Response:
+@limiter.limit("10/minute")
+async def docx_to_pdf(
+    request: Request,
+    file: UploadFile = File(...),
+) -> Response:
     logger.info("convert.docx_to_pdf name=%s", file.filename)
     soffice = _find_libreoffice()
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -595,7 +655,11 @@ async def docx_to_pdf(file: UploadFile = File(...)) -> Response:
 
 
 @app.post("/api/convert/pdf-to-docx")
-async def pdf_to_docx(file: UploadFile = File(...)) -> Response:
+@limiter.limit("10/minute")
+async def pdf_to_docx(
+    request: Request,
+    file: UploadFile = File(...),
+) -> Response:
     logger.info("convert.pdf_to_docx name=%s", file.filename)
     soffice = _find_libreoffice()
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -626,7 +690,11 @@ async def pdf_to_docx(file: UploadFile = File(...)) -> Response:
 
 
 @app.post("/api/convert/csv-to-xlsx")
-async def csv_to_xlsx(file: UploadFile = File(...)) -> Response:
+@limiter.limit("10/minute")
+async def csv_to_xlsx(
+    request: Request,
+    file: UploadFile = File(...),
+) -> Response:
     logger.info("convert.csv_to_xlsx name=%s", file.filename)
     with tempfile.TemporaryDirectory() as tmp_dir:
         input_path = Path(tmp_dir) / "input.csv"
@@ -639,7 +707,11 @@ async def csv_to_xlsx(file: UploadFile = File(...)) -> Response:
 
 
 @app.post("/api/convert/xlsx-to-csv")
-async def xlsx_to_csv(file: UploadFile = File(...)) -> Response:
+@limiter.limit("10/minute")
+async def xlsx_to_csv(
+    request: Request,
+    file: UploadFile = File(...),
+) -> Response:
     logger.info("convert.xlsx_to_csv name=%s", file.filename)
     with tempfile.TemporaryDirectory() as tmp_dir:
         input_path = Path(tmp_dir) / "input.xlsx"
@@ -651,7 +723,11 @@ async def xlsx_to_csv(file: UploadFile = File(...)) -> Response:
 
 
 @app.post("/api/convert/markdown-to-pdf")
-async def markdown_to_pdf(file: UploadFile = File(...)) -> Response:
+@limiter.limit("10/minute")
+async def markdown_to_pdf(
+    request: Request,
+    file: UploadFile = File(...),
+) -> Response:
     logger.info("convert.markdown_to_pdf name=%s", file.filename)
     pandoc = _ensure_binary("pandoc")
     _ensure_binary("wkhtmltopdf")
@@ -673,7 +749,9 @@ async def markdown_to_pdf(file: UploadFile = File(...)) -> Response:
 
 
 @app.post("/api/image/convert")
+@limiter.limit("30/minute")
 async def convert_image(
+    request: Request,
     file: UploadFile = File(...),
     target_format: str = Form(...),
 ) -> Response:
@@ -696,7 +774,9 @@ async def convert_image(
 
 
 @app.post("/api/image/resize")
+@limiter.limit("30/minute")
 async def resize_image(
+    request: Request,
     file: UploadFile = File(...),
     width: int | None = Form(None),
     height: int | None = Form(None),
@@ -738,7 +818,9 @@ async def resize_image(
 
 
 @app.post("/api/image/crop")
+@limiter.limit("30/minute")
 async def crop_image(
+    request: Request,
     file: UploadFile = File(...),
     x: int = Form(...),
     y: int = Form(...),
@@ -772,11 +854,20 @@ async def crop_image(
 
 
 @app.post("/api/image/watermark")
+@limiter.limit("30/minute")
 async def watermark_image(
+    request: Request,
     file: UploadFile = File(...),
     text: str = Form(...),
     target_format: str | None = Form(None),
 ) -> Response:
+    # Validate text length to prevent memory exhaustion
+    if len(text) > MAX_WATERMARK_TEXT_LENGTH:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Text too long. Maximum length is {MAX_WATERMARK_TEXT_LENGTH} characters.",
+        )
+
     logger.info(
         "image.watermark name=%s text_length=%s",
         file.filename,
@@ -810,7 +901,9 @@ async def watermark_image(
 
 
 @app.post("/api/image/strip-exif")
+@limiter.limit("30/minute")
 async def strip_exif(
+    request: Request,
     file: UploadFile = File(...),
     target_format: str | None = Form(None),
 ) -> Response:
@@ -832,7 +925,9 @@ async def strip_exif(
 
 
 @app.post("/api/media/convert")
+@limiter.limit("10/minute")
 async def convert_media(
+    request: Request,
     file: UploadFile = File(...),
     target_format: str = Form(...),
 ) -> Response:
@@ -858,7 +953,9 @@ async def convert_media(
 
 
 @app.post("/api/media/extract-audio")
+@limiter.limit("10/minute")
 async def extract_audio(
+    request: Request,
     file: UploadFile = File(...),
     target_format: str = Form("mp3"),
 ) -> Response:
@@ -883,7 +980,9 @@ async def extract_audio(
 
 
 @app.post("/api/media/trim")
+@limiter.limit("10/minute")
 async def trim_media(
+    request: Request,
     file: UploadFile = File(...),
     start: float = Form(...),
     end: float = Form(...),
@@ -934,7 +1033,9 @@ async def trim_media(
 
 
 @app.post("/api/media/compress")
+@limiter.limit("10/minute")
 async def compress_media(
+    request: Request,
     file: UploadFile = File(...),
     target_format: str = Form("mp4"),
 ) -> Response:
@@ -979,7 +1080,11 @@ async def ip_info(request: Request) -> dict:
 
 
 @app.get("/api/network/ping")
-async def ping_host(host: str) -> dict:
+@limiter.limit("30/minute")
+async def ping_host(
+    request: Request,
+    host: str,
+) -> dict:
     host = _safe_host(host)
     logger.info("network.ping host=%s", host)
     ping_bin = _ensure_binary("ping")
@@ -999,7 +1104,12 @@ async def ping_host(host: str) -> dict:
 
 
 @app.get("/api/network/dns")
-async def dns_lookup(host: str, record_type: str = "A") -> dict:
+@limiter.limit("30/minute")
+async def dns_lookup(
+    request: Request,
+    host: str,
+    record_type: str = "A",
+) -> dict:
     host = _safe_host(host)
     record = record_type.strip().upper()
     logger.info("network.dns host=%s record=%s", host, record)
@@ -1027,7 +1137,12 @@ async def dns_lookup(host: str, record_type: str = "A") -> dict:
 
 
 @app.get("/api/network/port")
-async def port_check(host: str, port: int) -> dict:
+@limiter.limit("60/minute")
+async def port_check(
+    request: Request,
+    host: str,
+    port: int,
+) -> dict:
     host = _safe_host(host)
     port = _safe_port(port)
     logger.info("network.port_check host=%s port=%s", host, port)

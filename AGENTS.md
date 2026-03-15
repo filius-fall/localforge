@@ -169,5 +169,20 @@ Some endpoints require external binaries (returns 501 if missing):
 - Markdown to PDF: `pandoc`, `wkhtmltopdf`
 - Media tools: `ffmpeg`
 
+**Installation commands:**
+
+Ubuntu/Debian:
+```bash
+sudo apt update
+sudo apt install -y ghostscript libreoffice pandoc wkhtmltopdf ffmpeg
+```
+
+macOS:
+```bash
+brew install ghostscript libreoffice pandoc wkhtmltopdf ffmpeg
+```
+
+**Note:** Docker users don't need to install these - the backend Dockerfile already includes all dependencies.
+
 ### No Existing Rules
 No `.cursorrules`, `.cursor/rules/`, or `.github/copilot-instructions.md` found. Follow the patterns documented above.

@@ -35,9 +35,11 @@ function CodeTools() {
   const [input, setInput] = useState('')
   const [output, setOutput] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   const handleBeautify = async () => {
     setError(null)
+    setLoading(true)
     try {
       const formatter = formatters[language]
       const formatted = await prettier.format(input, {
@@ -48,24 +50,31 @@ function CodeTools() {
       setOutput(formatted)
     } catch (err) {
       setError('Beautify failed. Check your code syntax.')
+    } finally {
+      setLoading(false)
     }
   }
 
   const handleMinify = async () => {
     setError(null)
+    setLoading(true)
     try {
       if (language === 'javascript') {
         const result = await minifyJs(input)
         setOutput(result.code ?? '')
+        setLoading(false)
         return
       }
       if (language === 'css') {
         setOutput(minifyCss(input))
+        setLoading(false)
         return
       }
       setOutput(minifyHtmlSimple(input))
     } catch (err) {
       setError('Minify failed. Check your code syntax.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -117,19 +126,34 @@ function CodeTools() {
           <textarea value={input} onChange={(event) => setInput(event.target.value)} />
         </label>
         <div className="action-row">
-          <button className="button primary" type="button" onClick={handleBeautify}>
-            Beautify
+          <button
+            className="button primary"
+            type="button"
+            onClick={handleBeautify}
+            disabled={loading}
+          >
+            {loading ? <span className="loading-spinner">Beautifying</span> : 'Beautify'}
           </button>
-          <button className="button ghost" type="button" onClick={handleMinify}>
-            Minify
+          <button
+            className="button ghost"
+            type="button"
+            onClick={handleMinify}
+            disabled={loading}
+          >
+            {loading ? <span className="loading-spinner">Minifying</span> : 'Minify'}
           </button>
-          <button className="button ghost" type="button" onClick={handleBase64Encode}>
+          <button className="button ghost" type="button" onClick={handleBase64Encode} disabled={loading}>
             Base64 Encode
           </button>
-          <button className="button ghost" type="button" onClick={handleBase64Decode}>
+          <button className="button ghost" type="button" onClick={handleBase64Decode} disabled={loading}>
             Base64 Decode
           </button>
         </div>
+        {loading && (
+          <p className="form-status">
+            <span className="loading-spinner">Processing</span>
+          </p>
+        )}
         <div className="output-card">
           <p className="preview-label">Output</p>
           <pre>{output}</pre>
