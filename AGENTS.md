@@ -184,5 +184,21 @@ brew install ghostscript libreoffice pandoc wkhtmltopdf ffmpeg
 
 **Note:** Docker users don't need to install these - the backend Dockerfile already includes all dependencies.
 
+### Docker Commands
+**Always use `docker compose` (modern) instead of `docker-compose` (deprecated):**
+```bash
+# Correct (modern)
+docker compose up -d
+docker compose logs -f
+docker compose down
+
+# Incorrect (deprecated)
+docker-compose up -d
+docker-compose logs -f
+docker-compose down
+```
+
+The `docker compose` plugin is built into Docker Engine. Legacy `docker-compose` should not be used.
+
 ### No Existing Rules
 No `.cursorrules`, `.cursor/rules/`, or `.github/copilot-instructions.md` found. Follow the patterns documented above.

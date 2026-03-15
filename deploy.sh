@@ -31,14 +31,15 @@ if ! command -v docker &> /dev/null; then
 fi
 
 # Check Docker Compose
-if ! command -v docker-compose &> /dev/null; then
-    echo -e "${RED}Error: Docker Compose is not installed${NC}"
-    echo "Install Docker Compose: https://docs.docker.com/compose/install/"
+if ! docker compose version &> /dev/null; then
+    echo -e "${RED}Error: Docker Compose is not available${NC}"
+    echo "Docker Compose plugin should be built into Docker"
+    echo "Check: docker compose version"
     exit 1
 fi
 
 # Configuration
-COMPOSE_FILE="docker-compose.server.yml"
+COMPOSE_FILE="docker compose.server.yml"
 ENV_FILE=".env"
 
 echo -e "${YELLOW}[1/6] Checking configuration...${NC}"
@@ -58,18 +59,18 @@ echo -e "${GREEN}✓ Configuration OK${NC}"
 echo ""
 
 echo -e "${YELLOW}[2/6] Stopping existing containers...${NC}"
-docker-compose -f "$COMPOSE_FILE" down 2>/dev/null || true
+docker compose -f "$COMPOSE_FILE" down 2>/dev/null || true
 echo -e "${GREEN}✓ Containers stopped${NC}"
 echo ""
 
 echo -e "${YELLOW}[3/6] Building Docker images...${NC}"
 echo "This may take 5-10 minutes on first run..."
-docker-compose -f "$COMPOSE_FILE" build
+docker compose -f "$COMPOSE_FILE" build
 echo -e "${GREEN}✓ Images built${NC}"
 echo ""
 
 echo -e "${YELLOW}[4/6] Starting services...${NC}"
-docker-compose -f "$COMPOSE_FILE" up -d
+docker compose -f "$COMPOSE_FILE" up -d
 echo -e "${GREEN}✓ Services started${NC}"
 echo ""
 
@@ -85,7 +86,7 @@ done
 echo ""
 
 echo -e "${YELLOW}[6/6] Verifying deployment...${NC}"
-docker-compose -f "$COMPOSE_FILE" ps
+docker compose -f "$COMPOSE_FILE" ps
 echo ""
 
 # Display access information
@@ -102,10 +103,10 @@ echo "  Your Tailscale IP: $(tailscale ip -4 2>/dev/null || echo 'Run: tailscale
 echo "  Access from any device on Tailscale network"
 echo ""
 echo "Management commands:"
-echo "  View logs:   docker-compose -f $COMPOSE_FILE logs -f"
-echo "  Stop:        docker-compose -f $COMPOSE_FILE down"
-echo "  Restart:     docker-compose -f $COMPOSE_FILE restart"
-echo "  Update:      git pull && docker-compose -f $COMPOSE_FILE up -d --build"
+echo "  View logs:   docker compose -f $COMPOSE_FILE logs -f"
+echo "  Stop:        docker compose -f $COMPOSE_FILE down"
+echo "  Restart:     docker compose -f $COMPOSE_FILE restart"
+echo "  Update:      git pull && docker compose -f $COMPOSE_FILE up -d --build"
 echo ""
 echo "For detailed information, see: ${GREEN}DEPLOY_SERVER.md${NC}"
 echo ""
