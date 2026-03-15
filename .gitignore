@@ -2,6 +2,10 @@
 .sisyphus/
 *.md
 !README.md
+!DEPLOY_*.md
+!SERVER_DEPLOY.md
+!DOCKER_DEPLOY.md
+!AGENTS.md
 # Python
 __pycache__/
 *.py[cod]
@@ -52,8 +56,8 @@ dist-ssr/
 
 # Env files
 .env
-.env.*
 !.env.example
+!.env.server
 
 # OS / Editor
 .DS_Store
