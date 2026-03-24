@@ -23,6 +23,12 @@ import PaletteGenerator from './pages/PaletteGenerator'
 import BaseConverter from './pages/BaseConverter'
 import ColorConverter from './pages/ColorConverter'
 import DecisionLogger from './pages/DecisionLogger'
+// File Converter sub-pages
+import DocxToPdf from './pages/convert/DocxToPdf'
+import PdfToDocx from './pages/convert/PdfToDocx'
+import CsvToXlsx from './pages/convert/CsvToXlsx'
+import XlsxToCsv from './pages/convert/XlsxToCsv'
+import MarkdownToPdf from './pages/convert/MarkdownToPdf'
 import './App.css'
 
 function App() {
@@ -35,6 +41,11 @@ function App() {
         <Route path="/tools/html" element={<HtmlCompiler />} />
         <Route path="/tools/pdf" element={<PdfToolkit />} />
         <Route path="/tools/convert" element={<FileConverter />} />
+        <Route path="/tools/convert/docx-to-pdf" element={<DocxToPdf />} />
+        <Route path="/tools/convert/pdf-to-docx" element={<PdfToDocx />} />
+        <Route path="/tools/convert/csv-to-xlsx" element={<CsvToXlsx />} />
+        <Route path="/tools/convert/xlsx-to-csv" element={<XlsxToCsv />} />
+        <Route path="/tools/convert/markdown-to-pdf" element={<MarkdownToPdf />} />
         <Route path="/tools/media" element={<MediaToolkit />} />
         <Route path="/tools/text" element={<TextUtilities />} />
         <Route path="/tools/qr" element={<QrGenerator />} />

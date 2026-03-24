@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { apiUrl } from '../lib/api'
+import { useOperationStatus, type OperationStatus } from '../lib/useOperationStatus'
 
 const parseFilename = (response: Response, fallback: string) => {
   const header = response.headers.get('content-disposition')
@@ -22,6 +23,29 @@ const downloadResponse = async (response: Response, fallback: string) => {
   URL.revokeObjectURL(url)
 }
 
+// Status indicator component
+function StatusIndicator({ status, error }: { status: OperationStatus; error: string | null }) {
+  if (status === 'idle') return null
+
+  const statusConfig = {
+    uploading: { icon: '⬆️', text: 'Uploading...' },
+    processing: { icon: '⚙️', text: 'Processing...' },
+    downloading: { icon: '⬇️', text: 'Downloading...' },
+    success: { icon: '✅', text: 'Done! Download started.' },
+    error: { icon: '❌', text: error || 'Failed.' },
+  }
+
+  const config = statusConfig[status]
+  const isError = status === 'error'
+
+  return (
+    <div className={`operation-status ${isError ? 'error' : ''}`}>
+      <span className="status-icon">{config.icon}</span>
+      <span className="status-text">{config.text}</span>
+    </div>
+  )
+}
+
 function PdfToolkit() {
   const [mergeFiles, setMergeFiles] = useState<FileList | null>(null)
   const [splitFile, setSplitFile] = useState<File | null>(null)
@@ -31,111 +55,150 @@ function PdfToolkit() {
   const [rotatePages, setRotatePages] = useState('')
   const [optimizeFile, setOptimizeFile] = useState<File | null>(null)
   const [optimizeLevel, setOptimizeLevel] = useState('screen')
-  const [status, setStatus] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
 
-  const runAction = async (action: () => Promise<void>) => {
-    setLoading(true)
-    setError(null)
-    setStatus(null)
-    try {
-      await action()
-      setStatus('Done. Download started.')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Request failed.')
-    } finally {
-      setLoading(false)
-    }
-  }
+  // Individual operation states
+  const mergeOp = useOperationStatus()
+  const splitOp = useOperationStatus()
+  const rotateOp = useOperationStatus()
+  const optimizeOp = useOperationStatus()
 
   const handleMerge = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!mergeFiles || mergeFiles.length < 2) {
-      setError('Select at least two PDFs to merge.')
+      mergeOp.update('error', 'Select at least two PDFs to merge.')
       return
     }
-    await runAction(async () => {
-      const formData = new FormData()
-      Array.from(mergeFiles).forEach((file) => formData.append('files', file))
-      const response = await fetch(apiUrl('/api/pdf/merge'), {
-        method: 'POST',
-        body: formData,
-      })
-      if (!response.ok) {
-        throw new Error((await response.json().catch(() => null))?.detail ?? 'Merge failed.')
-      }
-      await downloadResponse(response, 'merged.pdf')
+
+    await mergeOp.run({
+      upload: async () => {
+        const formData = new FormData()
+        Array.from(mergeFiles).forEach((file) => formData.append('files', file))
+        const response = await fetch(apiUrl('/api/pdf/merge'), {
+          method: 'POST',
+          body: formData,
+        })
+        if (!response.ok) {
+          throw new Error((await response.json().catch(() => null))?.detail ?? 'Merge failed.')
+        }
+        return response
+      },
+      process: async () => {
+        // Processing happens server-side during upload
+      },
+      download: async () => {
+        const formData = new FormData()
+        Array.from(mergeFiles).forEach((file) => formData.append('files', file))
+        const response = await fetch(apiUrl('/api/pdf/merge'), {
+          method: 'POST',
+          body: formData,
+        })
+        if (!response.ok) throw new Error('Merge failed.')
+        await downloadResponse(response, 'merged.pdf')
+      },
     })
   }
 
   const handleSplit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!splitFile) {
-      setError('Select a PDF to split.')
+      splitOp.update('error', 'Select a PDF to split.')
       return
     }
-    await runAction(async () => {
-      const formData = new FormData()
-      formData.append('file', splitFile)
-      if (splitRanges.trim()) {
-        formData.append('ranges', splitRanges.trim())
-      }
-      const response = await fetch(apiUrl('/api/pdf/split'), {
-        method: 'POST',
-        body: formData,
-      })
-      if (!response.ok) {
-        throw new Error((await response.json().catch(() => null))?.detail ?? 'Split failed.')
-      }
-      await downloadResponse(response, 'split-pdfs.zip')
+
+    await splitOp.run({
+      upload: async () => {
+        const formData = new FormData()
+        formData.append('file', splitFile)
+        if (splitRanges.trim()) formData.append('ranges', splitRanges.trim())
+        const response = await fetch(apiUrl('/api/pdf/split'), {
+          method: 'POST',
+          body: formData,
+        })
+        if (!response.ok) {
+          throw new Error((await response.json().catch(() => null))?.detail ?? 'Split failed.')
+        }
+      },
+      download: async () => {
+        const formData = new FormData()
+        formData.append('file', splitFile)
+        if (splitRanges.trim()) formData.append('ranges', splitRanges.trim())
+        const response = await fetch(apiUrl('/api/pdf/split'), {
+          method: 'POST',
+          body: formData,
+        })
+        if (!response.ok) throw new Error('Split failed.')
+        await downloadResponse(response, 'split-pdfs.zip')
+      },
     })
   }
 
   const handleRotate = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!rotateFile) {
-      setError('Select a PDF to rotate.')
+      rotateOp.update('error', 'Select a PDF to rotate.')
       return
     }
-    await runAction(async () => {
-      const formData = new FormData()
-      formData.append('file', rotateFile)
-      formData.append('angle', rotateAngle)
-      if (rotatePages.trim()) {
-        formData.append('pages', rotatePages.trim())
-      }
-      const response = await fetch(apiUrl('/api/pdf/rotate'), {
-        method: 'POST',
-        body: formData,
-      })
-      if (!response.ok) {
-        throw new Error((await response.json().catch(() => null))?.detail ?? 'Rotate failed.')
-      }
-      await downloadResponse(response, 'rotated.pdf')
+
+    await rotateOp.run({
+      upload: async () => {
+        const formData = new FormData()
+        formData.append('file', rotateFile)
+        formData.append('angle', rotateAngle)
+        if (rotatePages.trim()) formData.append('pages', rotatePages.trim())
+        const response = await fetch(apiUrl('/api/pdf/rotate'), {
+          method: 'POST',
+          body: formData,
+        })
+        if (!response.ok) {
+          throw new Error((await response.json().catch(() => null))?.detail ?? 'Rotate failed.')
+        }
+      },
+      download: async () => {
+        const formData = new FormData()
+        formData.append('file', rotateFile)
+        formData.append('angle', rotateAngle)
+        if (rotatePages.trim()) formData.append('pages', rotatePages.trim())
+        const response = await fetch(apiUrl('/api/pdf/rotate'), {
+          method: 'POST',
+          body: formData,
+        })
+        if (!response.ok) throw new Error('Rotate failed.')
+        await downloadResponse(response, 'rotated.pdf')
+      },
     })
   }
 
   const handleOptimize = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!optimizeFile) {
-      setError('Select a PDF to optimize.')
+      optimizeOp.update('error', 'Select a PDF to optimize.')
       return
     }
-    await runAction(async () => {
-      const formData = new FormData()
-      formData.append('file', optimizeFile)
-      formData.append('level', optimizeLevel)
-      const response = await fetch(apiUrl('/api/pdf/optimize'), {
-        method: 'POST',
-        body: formData,
-      })
-      if (!response.ok) {
-        throw new Error(
-          (await response.json().catch(() => null))?.detail ?? 'Optimize failed.'
-        )
-      }
-      await downloadResponse(response, 'optimized.pdf')
+
+    await optimizeOp.run({
+      upload: async () => {
+        const formData = new FormData()
+        formData.append('file', optimizeFile)
+        formData.append('level', optimizeLevel)
+        const response = await fetch(apiUrl('/api/pdf/optimize'), {
+          method: 'POST',
+          body: formData,
+        })
+        if (!response.ok) {
+          throw new Error((await response.json().catch(() => null))?.detail ?? 'Optimize failed.')
+        }
+      },
+      download: async () => {
+        const formData = new FormData()
+        formData.append('file', optimizeFile)
+        formData.append('level', optimizeLevel)
+        const response = await fetch(apiUrl('/api/pdf/optimize'), {
+          method: 'POST',
+          body: formData,
+        })
+        if (!response.ok) throw new Error('Optimize failed.')
+        await downloadResponse(response, 'optimized.pdf')
+      },
     })
   }
 
@@ -165,15 +228,12 @@ function PdfToolkit() {
               <button
                 className="button primary"
                 type="submit"
-                disabled={loading}
+                disabled={mergeOp.isBusy}
               >
-                {loading ? (
-                  <span className="loading-spinner">Merging</span>
-                ) : (
-                  'Merge & Download'
-                )}
+                {mergeOp.isBusy ? 'Merging...' : 'Merge & Download'}
               </button>
             </div>
+            <StatusIndicator status={mergeOp.state.status} error={mergeOp.state.error} />
           </form>
         </div>
 
@@ -202,15 +262,12 @@ function PdfToolkit() {
               <button
                 className="button primary"
                 type="submit"
-                disabled={loading}
+                disabled={splitOp.isBusy}
               >
-                {loading ? (
-                  <span className="loading-spinner">Splitting</span>
-                ) : (
-                  'Split & Download'
-                )}
+                {splitOp.isBusy ? 'Splitting...' : 'Split & Download'}
               </button>
             </div>
+            <StatusIndicator status={splitOp.state.status} error={splitOp.state.error} />
           </form>
         </div>
 
@@ -250,15 +307,12 @@ function PdfToolkit() {
               <button
                 className="button primary"
                 type="submit"
-                disabled={loading}
+                disabled={rotateOp.isBusy}
               >
-                {loading ? (
-                  <span className="loading-spinner">Rotating</span>
-                ) : (
-                  'Rotate & Download'
-                )}
+                {rotateOp.isBusy ? 'Rotating...' : 'Rotate & Download'}
               </button>
             </div>
+            <StatusIndicator status={rotateOp.state.status} error={rotateOp.state.error} />
           </form>
         </div>
 
@@ -291,25 +345,14 @@ function PdfToolkit() {
               <button
                 className="button primary"
                 type="submit"
-                disabled={loading}
+                disabled={optimizeOp.isBusy}
               >
-                {loading ? (
-                  <span className="loading-spinner">Optimizing</span>
-                ) : (
-                  'Optimize & Download'
-                )}
+                {optimizeOp.isBusy ? 'Optimizing...' : 'Optimize & Download'}
               </button>
             </div>
+            <StatusIndicator status={optimizeOp.state.status} error={optimizeOp.state.error} />
           </form>
         </div>
-
-        {loading && (
-          <p className="form-status">
-            <span className="loading-spinner">Processing PDF</span>
-          </p>
-        )}
-        {status && <p className="form-status">{status}</p>}
-        {error && <p className="form-error">{error}</p>}
       </div>
     </section>
   )

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { apiUrl } from '../lib/api'
+import { useOperationStatus, type OperationStatus } from '../lib/useOperationStatus'
 
 const parseFilename = (response: Response, fallback: string) => {
   const header = response.headers.get('content-disposition')
@@ -22,6 +23,29 @@ const downloadResponse = async (response: Response, fallback: string) => {
   URL.revokeObjectURL(url)
 }
 
+// Status indicator component
+function StatusIndicator({ status, error }: { status: OperationStatus; error: string | null }) {
+  if (status === 'idle') return null
+
+  const statusConfig = {
+    uploading: { icon: '⬆️', text: 'Uploading...' },
+    processing: { icon: '⚙️', text: 'Converting...' },
+    downloading: { icon: '⬇️', text: 'Downloading...' },
+    success: { icon: '✅', text: 'Done! Download started.' },
+    error: { icon: '❌', text: error || 'Failed.' },
+  }
+
+  const config = statusConfig[status]
+  const isError = status === 'error'
+
+  return (
+    <div className={`operation-status ${isError ? 'error' : ''}`}>
+      <span className="status-icon">{config.icon}</span>
+      <span className="status-text">{config.text}</span>
+    </div>
+  )
+}
+
 function MediaToolkit() {
   const [file, setFile] = useState<File | null>(null)
   const [convertFormat, setConvertFormat] = useState('mp4')
@@ -34,12 +58,16 @@ function MediaToolkit() {
   const [gifFps, setGifFps] = useState('15')
   const [gifWidth, setGifWidth] = useState('')
   const [gifHeight, setGifHeight] = useState('')
-  const [status, setStatus] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [retainFiles, setRetainFiles] = useState(false)
   const [sessionExpiresIn, setSessionExpiresIn] = useState<number>(30)
+
+  // Individual operation states
+  const convertOp = useOperationStatus()
+  const extractOp = useOperationStatus()
+  const trimOp = useOperationStatus()
+  const compressOp = useOperationStatus()
+  const gifOp = useOperationStatus()
 
   // Create session on mount if retainFiles is enabled
   useEffect(() => {
@@ -77,41 +105,198 @@ function MediaToolkit() {
     }
   }
 
-  const runAction = async (action: () => Promise<void>) => {
-    setLoading(true)
-    setError(null)
-    setStatus(null)
-    try {
-      await action()
-      setStatus('Done. Download started.')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Request failed.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const uploadAndConvert = async (
-    endpoint: string,
-    fields: Record<string, string>,
-    fallback: string
-  ) => {
+  const handleConvert = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
     if (!file) {
-      setError('Select a media file first.')
+      convertOp.update('error', 'Select a media file first.')
       return
     }
-    await runAction(async () => {
-      const formData = new FormData()
-      formData.append('file', file)
-      Object.entries(fields).forEach(([key, value]) => formData.append(key, value))
-      const response = await fetch(apiUrl(endpoint), {
-        method: 'POST',
-        body: formData,
-      })
-      if (!response.ok) {
-        throw new Error((await response.json().catch(() => null))?.detail ?? 'Failed.')
-      }
-      await downloadResponse(response, fallback)
+
+    await convertOp.run({
+      upload: async () => {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('target_format', convertFormat)
+        const response = await fetch(apiUrl('/api/media/convert'), {
+          method: 'POST',
+          body: formData,
+        })
+        if (!response.ok) {
+          throw new Error((await response.json().catch(() => null))?.detail ?? 'Convert failed.')
+        }
+      },
+      process: async () => {
+        // Server handles processing during upload
+      },
+      download: async () => {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('target_format', convertFormat)
+        const response = await fetch(apiUrl('/api/media/convert'), {
+          method: 'POST',
+          body: formData,
+        })
+        if (!response.ok) throw new Error('Convert failed.')
+        await downloadResponse(response, `converted.${convertFormat}`)
+      },
+    })
+  }
+
+  const handleExtractAudio = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!file) {
+      extractOp.update('error', 'Select a media file first.')
+      return
+    }
+
+    await extractOp.run({
+      upload: async () => {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('target_format', audioFormat)
+        const response = await fetch(apiUrl('/api/media/extract-audio'), {
+          method: 'POST',
+          body: formData,
+        })
+        if (!response.ok) {
+          throw new Error((await response.json().catch(() => null))?.detail ?? 'Extract failed.')
+        }
+      },
+      download: async () => {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('target_format', audioFormat)
+        const response = await fetch(apiUrl('/api/media/extract-audio'), {
+          method: 'POST',
+          body: formData,
+        })
+        if (!response.ok) throw new Error('Extract failed.')
+        await downloadResponse(response, `audio.${audioFormat}`)
+      },
+    })
+  }
+
+  const handleTrim = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!file) {
+      trimOp.update('error', 'Select a media file first.')
+      return
+    }
+
+    await trimOp.run({
+      upload: async () => {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('start', trimStart)
+        formData.append('end', trimEnd)
+        formData.append('target_format', convertFormat)
+        const response = await fetch(apiUrl('/api/media/trim'), {
+          method: 'POST',
+          body: formData,
+        })
+        if (!response.ok) {
+          throw new Error((await response.json().catch(() => null))?.detail ?? 'Trim failed.')
+        }
+      },
+      download: async () => {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('start', trimStart)
+        formData.append('end', trimEnd)
+        formData.append('target_format', convertFormat)
+        const response = await fetch(apiUrl('/api/media/trim'), {
+          method: 'POST',
+          body: formData,
+        })
+        if (!response.ok) throw new Error('Trim failed.')
+        await downloadResponse(response, `trimmed.${convertFormat}`)
+      },
+    })
+  }
+
+  const handleCompress = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!file) {
+      compressOp.update('error', 'Select a media file first.')
+      return
+    }
+
+    await compressOp.run({
+      upload: async () => {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('target_format', compressFormat)
+        const response = await fetch(apiUrl('/api/media/compress'), {
+          method: 'POST',
+          body: formData,
+        })
+        if (!response.ok) {
+          throw new Error((await response.json().catch(() => null))?.detail ?? 'Compress failed.')
+        }
+      },
+      download: async () => {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('target_format', compressFormat)
+        const response = await fetch(apiUrl('/api/media/compress'), {
+          method: 'POST',
+          body: formData,
+        })
+        if (!response.ok) throw new Error('Compress failed.')
+        await downloadResponse(response, `compressed.${compressFormat}`)
+      },
+    })
+  }
+
+  const handleCreateGif = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!file) {
+      gifOp.update('error', 'Select a media file first.')
+      return
+    }
+
+    await gifOp.run({
+      upload: async () => {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('start_time', gifStartTime)
+        formData.append('duration', gifDuration)
+        formData.append('fps', gifFps)
+        if (gifWidth) formData.append('width', gifWidth)
+        if (gifHeight) formData.append('height', gifHeight)
+        if (sessionId) formData.append('session_id', sessionId)
+
+        const response = await fetch(apiUrl('/api/media/video-to-gif'), {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null)
+          throw new Error(payload?.detail ?? 'Request failed.')
+        }
+      },
+      process: async () => {
+        // Server handles processing
+      },
+      download: async () => {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('start_time', gifStartTime)
+        formData.append('duration', gifDuration)
+        formData.append('fps', gifFps)
+        if (gifWidth) formData.append('width', gifWidth)
+        if (gifHeight) formData.append('height', gifHeight)
+        if (sessionId) formData.append('session_id', sessionId)
+
+        const response = await fetch(apiUrl('/api/media/video-to-gif'), {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!response.ok) throw new Error('Request failed.')
+        await downloadResponse(response, 'output.gif')
+      },
     })
   }
 
@@ -136,17 +321,7 @@ function MediaToolkit() {
 
         <div className="tool-section">
           <h2>Convert Format</h2>
-          <form
-            className="form"
-            onSubmit={(event) => {
-              event.preventDefault()
-              uploadAndConvert(
-                '/api/media/convert',
-                { target_format: convertFormat },
-                `converted.${convertFormat}`
-              )
-            }}
-          >
+          <form onSubmit={handleConvert} className="form">
             <label className="field">
               <span>Target format</span>
               <select
@@ -162,26 +337,17 @@ function MediaToolkit() {
               </select>
             </label>
             <div className="action-row">
-              <button className="button primary" type="submit" disabled={loading}>
-                Convert & Download
+              <button className="button primary" type="submit" disabled={convertOp.isBusy}>
+                {convertOp.isBusy ? 'Converting...' : 'Convert & Download'}
               </button>
             </div>
+            <StatusIndicator status={convertOp.state.status} error={convertOp.state.error} />
           </form>
         </div>
 
         <div className="tool-section">
           <h2>Extract Audio</h2>
-          <form
-            className="form"
-            onSubmit={(event) => {
-              event.preventDefault()
-              uploadAndConvert(
-                '/api/media/extract-audio',
-                { target_format: audioFormat },
-                `audio.${audioFormat}`
-              )
-            }}
-          >
+          <form onSubmit={handleExtractAudio} className="form">
             <label className="field">
               <span>Audio format</span>
               <select
@@ -195,26 +361,17 @@ function MediaToolkit() {
               </select>
             </label>
             <div className="action-row">
-              <button className="button primary" type="submit" disabled={loading}>
-                Extract & Download
+              <button className="button primary" type="submit" disabled={extractOp.isBusy}>
+                {extractOp.isBusy ? 'Extracting...' : 'Extract & Download'}
               </button>
             </div>
+            <StatusIndicator status={extractOp.state.status} error={extractOp.state.error} />
           </form>
         </div>
 
         <div className="tool-section">
           <h2>Trim Clip</h2>
-          <form
-            className="form"
-            onSubmit={(event) => {
-              event.preventDefault()
-              uploadAndConvert(
-                '/api/media/trim',
-                { start: trimStart, end: trimEnd, target_format: convertFormat },
-                `trimmed.${convertFormat}`
-              )
-            }}
-          >
+          <form onSubmit={handleTrim} className="form">
             <div className="form-grid">
               <label className="field">
                 <span>Start (seconds)</span>
@@ -242,26 +399,17 @@ function MediaToolkit() {
               </label>
             </div>
             <div className="action-row">
-              <button className="button primary" type="submit" disabled={loading}>
-                Trim & Download
+              <button className="button primary" type="submit" disabled={trimOp.isBusy}>
+                {trimOp.isBusy ? 'Trimming...' : 'Trim & Download'}
               </button>
             </div>
+            <StatusIndicator status={trimOp.state.status} error={trimOp.state.error} />
           </form>
         </div>
 
         <div className="tool-section">
           <h2>Compress Media</h2>
-          <form
-            className="form"
-            onSubmit={(event) => {
-              event.preventDefault()
-              uploadAndConvert(
-                '/api/media/compress',
-                { target_format: compressFormat },
-                `compressed.${compressFormat}`
-              )
-            }}
-          >
+          <form onSubmit={handleCompress} className="form">
             <label className="field">
               <span>Target format</span>
               <select
@@ -276,48 +424,17 @@ function MediaToolkit() {
               </select>
             </label>
             <div className="action-row">
-              <button className="button primary" type="submit" disabled={loading}>
-                Compress & Download
+              <button className="button primary" type="submit" disabled={compressOp.isBusy}>
+                {compressOp.isBusy ? 'Compressing...' : 'Compress & Download'}
               </button>
             </div>
+            <StatusIndicator status={compressOp.state.status} error={compressOp.state.error} />
           </form>
         </div>
 
         <div className="tool-section">
           <h2>Create GIF from Video</h2>
-          <form
-            className="form"
-            onSubmit={async (event) => {
-              event.preventDefault()
-              if (!file) {
-                setError('Select a media file first.')
-                return
-              }
-
-              await runAction(async () => {
-                const formData = new FormData()
-                formData.append('file', file)
-                formData.append('start_time', gifStartTime)
-                formData.append('duration', gifDuration)
-                formData.append('fps', gifFps)
-                if (gifWidth) formData.append('width', gifWidth)
-                if (gifHeight) formData.append('height', gifHeight)
-                if (sessionId) formData.append('session_id', sessionId)
-
-                const response = await fetch(apiUrl('/api/media/video-to-gif'), {
-                  method: 'POST',
-                  body: formData,
-                })
-
-                if (!response.ok) {
-                  const payload = await response.json().catch(() => null)
-                  throw new Error(payload?.detail ?? 'Request failed.')
-                }
-
-                await downloadResponse(response, 'output.gif')
-              })
-            }}
-          >
+          <form onSubmit={handleCreateGif} className="form">
             <div className="form-grid">
               <label className="field">
                 <span>Start time (seconds)</span>
@@ -369,15 +486,15 @@ function MediaToolkit() {
                   Keep files for {sessionExpiresIn} min (faster re-conversion)
                 </span>
               </label>
-              <button className="button primary" type="submit" disabled={loading}>
-                Create GIF & Download
+              <button className="button primary" type="submit" disabled={gifOp.isBusy}>
+                {gifOp.isBusy ? 'Creating GIF...' : 'Create GIF & Download'}
               </button>
             </div>
             {sessionId && (
               <div style={{ marginTop: '12px', padding: '10px 14px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--accent)' }}>
-                <strong>Session active:</strong> Files will be auto-deleted in {sessionExpiresIn} minutes. 
-                <button 
-                  type="button" 
+                <strong>Session active:</strong> Files will be auto-deleted in {sessionExpiresIn} minutes.
+                <button
+                  type="button"
                   onClick={deleteSession}
                   style={{ marginLeft: '12px', background: 'none', border: 'none', color: 'inherit', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.85rem' }}
                 >
@@ -385,16 +502,9 @@ function MediaToolkit() {
                 </button>
               </div>
             )}
+            <StatusIndicator status={gifOp.state.status} error={gifOp.state.error} />
           </form>
         </div>
-
-        {status && <p className="form-status">{status}</p>}
-        {error && <p className="form-error">{error}</p>}
-        {loading && (
-          <div className="form-status">
-            <span className="loading-spinner">Processing</span>
-          </div>
-        )}
       </div>
     </section>
   )

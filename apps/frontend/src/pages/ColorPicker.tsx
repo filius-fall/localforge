@@ -41,7 +41,7 @@ function ColorPicker() {
   const [hex, setHex] = useState('#00ff00')
   const [rgb, setRgb] = useState<RgbColor>({ r: 0, g:255, b: 0 })
   const [error, setError] = useState<string>('')
-  const [copied, setCopied] = useState<string>('')
+  const [_copied, _setCopied] = useState<string>('')
   const [hexCopied, setHexCopied] = useState<string>('')
   const [rgbCopied, setRgbCopied] = useState<string>('')
 

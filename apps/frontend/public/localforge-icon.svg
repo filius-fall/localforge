@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-labelledby="iconTitle iconDesc">
+  <title id="iconTitle">LocalForge Icon</title>
+  <desc id="iconDesc">LocalForge brand mark - anvil and forge symbol</desc>
+  
+  <!-- Define reusable gradient -->
+  <defs>
+    <linearGradient id="lf-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0066FF"/>
+      <stop offset="100%" stop-color="#0052CC"/>
+    </linearGradient>
+    <style>
+      .lf-icon-bg { fill: url(#lf-gradient); }
+      .lf-icon-fg { fill: #FFFFFF; }
+      .lf-icon-fg-subtle { fill: #FFFFFF; opacity: 0.85; }
+    </style>
+  </defs>
+  
+  <!-- Background rounded square -->
+  <rect x="0" y="0" width="48" height="48" rx="12" ry="12" class="lf-icon-bg"/>
+  
+  <!-- Anvil/Forge symbol - clean geometric design -->
+  <g transform="translate(24, 24)">
+    <!-- Anvil main body - stylized geometric shape -->
+    <path d="M-14 -10 L14 -10 L16 -6 L16 6 L-16 6 L-16 -6 Z" class="lf-icon-fg" opacity="0.95"/>
+    
+    <!-- Anvil horn detail (right protrusion) -->
+    <path d="M14 -10 L17 -7 L17 5 L16 6 L16 -6 Z" class="lf-icon-fg" opacity="0.8"/>
+    
+    <!-- Anvil base plate -->
+    <rect x="-13" y="7" width="26" height="5" rx="2" class="lf-icon-fg" opacity="0.9"/>
+    
+    <!-- Hammer head above anvil -->
+    <rect x="-7" y="-16" width="14" height="4" rx="1.5" class="lf-icon-fg-subtle"/>
+    
+    <!-- Hammer handle -->
+    <rect x="-1.5" y="-16" width="3" height="9" rx="1" class="lf-icon-fg-subtle"/>
+  </g>
+  
+  <!-- Subtle inner highlight for depth -->
+  <ellipse cx="16" cy="16" rx="10" ry="10" fill="white" opacity="0.12"/>
+  
+  <!-- Inner border for definition -->
+  <rect x="1" y="1" width="46" height="46" rx="11" ry="11" fill="none" stroke="white" stroke-width="1" opacity="0.2"/>
+</svg>

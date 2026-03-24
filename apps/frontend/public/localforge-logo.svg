@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 64" role="img" aria-labelledby="logoTitle logoDesc">
+  <title id="logoTitle">LocalForge</title>
+  <desc id="logoDesc">LocalForge - Local-first developer utilities</desc>
+  
+  <!-- Define color variables for consistency -->
+  <defs>
+    <style>
+      .lf-accent { fill: #0066FF; }
+      .lf-accent-strong { fill: #0052CC; }
+      .lf-ink { fill: #0F172A; }
+      .lf-muted { fill: #475569; }
+      .lf-surface { fill: #F1F5F9; }
+    </style>
+  </defs>
+  
+  <!-- Icon Mark (32x32 viewBox, scaled to 48x48) -->
+  <g transform="translate(8, 8) scale(1)">
+    <!-- Background rounded square -->
+    <rect x="0" y="0" width="48" height="48" rx="12" ry="12" class="lf-accent"/>
+    
+    <!-- Anvil/Forge symbol - stylized geometric -->
+    <g transform="translate(24, 24)">
+      <!-- Anvil top surface -->
+      <path d="M-14 -8 L14 -8 L16 -4 L16 4 L-16 4 L-16 -4 Z" class="lf-surface" opacity="0.95"/>
+      <!-- Anvil horn (right side) -->
+      <path d="M14 -8 L18 -6 L18 2 L16 4 L16 -4 Z" class="lf-surface" opacity="0.85"/>
+      <!-- Anvil base -->
+      <rect x="-12" y="6" width="24" height="8" rx="2" class="lf-surface" opacity="0.9"/>
+      <!-- Hammer/forging element -->
+      <path d="M-8 -14 L8 -14 L8 -10 L-8 -10 Z" class="lf-surface" opacity="0.75"/>
+      <rect x="-2" y="-14" width="4" height="8" class="lf-surface" opacity="0.75"/>
+    </g>
+    
+    <!-- Subtle shine/highlight -->
+    <ellipse cx="16" cy="16" rx="8" ry="8" fill="white" opacity="0.15"/>
+  </g>
+  
+  <!-- Wordmark -->
+  <g transform="translate(68, 40)">
+    <!-- "Local" - slightly lighter weight -->
+    <text x="0" y="0" font-family="Manrope, system-ui, -apple-system, sans-serif" font-weight="600" font-size="28" class="lf-ink" letter-spacing="-0.02em">Local</text>
+    
+    <!-- "Forge" - bold, accent color -->
+    <text x="102" y="0" font-family="Manrope, system-ui, -apple-system, sans-serif" font-weight="700" font-size="28" class="lf-accent-strong" letter-spacing="-0.02em">Forge</text>
+    
+    <!-- Tagline -->
+    <text x="0" y="18" font-family="Manrope, system-ui, -apple-system, sans-serif" font-weight="500" font-size="10" class="lf-muted" letter-spacing="0.08em">LOCAL-FIRST UTILITIES</text>
+  </g>
+</svg>

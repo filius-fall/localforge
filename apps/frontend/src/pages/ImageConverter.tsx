@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { apiUrl } from '../lib/api'
+import { useOperationStatus, type OperationStatus } from '../lib/useOperationStatus'
 
 const formatOptions = [
   { value: 'png', label: 'PNG' },
@@ -28,6 +29,29 @@ const downloadResponse = async (response: Response, fallback: string) => {
   URL.revokeObjectURL(url)
 }
 
+// Status indicator component
+function StatusIndicator({ status, error }: { status: OperationStatus; error: string | null }) {
+  if (status === 'idle') return null
+
+  const statusConfig = {
+    uploading: { icon: '⬆️', text: 'Uploading...' },
+    processing: { icon: '⚙️', text: 'Processing...' },
+    downloading: { icon: '⬇️', text: 'Downloading...' },
+    success: { icon: '✅', text: 'Done! Download started.' },
+    error: { icon: '❌', text: error || 'Failed.' },
+  }
+
+  const config = statusConfig[status]
+  const isError = status === 'error'
+
+  return (
+    <div className={`operation-status ${isError ? 'error' : ''}`}>
+      <span className="status-icon">{config.icon}</span>
+      <span className="status-text">{config.text}</span>
+    </div>
+  )
+}
+
 function ImageConverter() {
   const [file, setFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -39,9 +63,13 @@ function ImageConverter() {
   const [cropWidth, setCropWidth] = useState('300')
   const [cropHeight, setCropHeight] = useState('300')
   const [watermarkText, setWatermarkText] = useState('LocalForge')
-  const [status, setStatus] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+
+  // Individual operation states
+  const convertOp = useOperationStatus()
+  const resizeOp = useOperationStatus()
+  const cropOp = useOperationStatus()
+  const watermarkOp = useOperationStatus()
+  const stripExifOp = useOperationStatus()
 
   useEffect(() => {
     if (!file) {
@@ -54,43 +82,45 @@ function ImageConverter() {
     return () => URL.revokeObjectURL(objectUrl)
   }, [file])
 
-  const runAction = async (action: () => Promise<void>) => {
-    setLoading(true)
-    setError(null)
-    setStatus(null)
-    try {
-      await action()
-      setStatus('Done. Download started.')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Request failed.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const submitForm = async (
     endpoint: string,
     fields: Record<string, string>,
-    fallback: string
+    fallback: string,
+    operation: ReturnType<typeof useOperationStatus>
   ) => {
     if (!file) {
-      setError('Please choose an image first.')
+      operation.update('error', 'Please choose an image first.')
       return
     }
 
-    await runAction(async () => {
-      const formData = new FormData()
-      formData.append('file', file)
-      Object.entries(fields).forEach(([key, value]) => formData.append(key, value))
-      const response = await fetch(apiUrl(endpoint), {
-        method: 'POST',
-        body: formData,
-      })
-      if (!response.ok) {
-        const payload = await response.json().catch(() => null)
-        throw new Error(payload?.detail ?? 'Request failed.')
-      }
-      await downloadResponse(response, fallback)
+    await operation.run({
+      upload: async () => {
+        const formData = new FormData()
+        formData.append('file', file)
+        Object.entries(fields).forEach(([key, value]) => formData.append(key, value))
+        const response = await fetch(apiUrl(endpoint), {
+          method: 'POST',
+          body: formData,
+        })
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null)
+          throw new Error(payload?.detail ?? 'Request failed.')
+        }
+      },
+      process: async () => {
+        // Server handles processing
+      },
+      download: async () => {
+        const formData = new FormData()
+        formData.append('file', file)
+        Object.entries(fields).forEach(([key, value]) => formData.append(key, value))
+        const response = await fetch(apiUrl(endpoint), {
+          method: 'POST',
+          body: formData,
+        })
+        if (!response.ok) throw new Error('Request failed.')
+        await downloadResponse(response, fallback)
+      },
     })
   }
 
@@ -119,7 +149,7 @@ function ImageConverter() {
             className="form"
             onSubmit={(event) => {
               event.preventDefault()
-              submitForm('/api/image/convert', { target_format: targetFormat }, 'converted.png')
+              submitForm('/api/image/convert', { target_format: targetFormat }, 'converted.png', convertOp)
             }}
           >
             <label className="field">
@@ -139,15 +169,12 @@ function ImageConverter() {
               <button
                 className="button primary"
                 type="submit"
-                disabled={loading}
+                disabled={convertOp.isBusy}
               >
-                {loading ? (
-                  <span className="loading-spinner">Converting</span>
-                ) : (
-                  'Convert & Download'
-                )}
+                {convertOp.isBusy ? 'Converting...' : 'Convert & Download'}
               </button>
             </div>
+            <StatusIndicator status={convertOp.state.status} error={convertOp.state.error} />
           </form>
         </div>
 
@@ -160,7 +187,8 @@ function ImageConverter() {
               submitForm(
                 '/api/image/resize',
                 { width: resizeWidth, height: resizeHeight, target_format: targetFormat },
-                'resized.png'
+                'resized.png',
+                resizeOp
               )
             }}
           >
@@ -178,15 +206,12 @@ function ImageConverter() {
               <button
                 className="button primary"
                 type="submit"
-                disabled={loading}
+                disabled={resizeOp.isBusy}
               >
-                {loading ? (
-                  <span className="loading-spinner">Resizing</span>
-                ) : (
-                  'Resize & Download'
-                )}
+                {resizeOp.isBusy ? 'Resizing...' : 'Resize & Download'}
               </button>
             </div>
+            <StatusIndicator status={resizeOp.state.status} error={resizeOp.state.error} />
           </form>
         </div>
 
@@ -205,7 +230,8 @@ function ImageConverter() {
                   height: cropHeight,
                   target_format: targetFormat,
                 },
-                'cropped.png'
+                'cropped.png',
+                cropOp
               )
             }}
           >
@@ -231,15 +257,12 @@ function ImageConverter() {
               <button
                 className="button primary"
                 type="submit"
-                disabled={loading}
+                disabled={cropOp.isBusy}
               >
-                {loading ? (
-                  <span className="loading-spinner">Cropping</span>
-                ) : (
-                  'Crop & Download'
-                )}
+                {cropOp.isBusy ? 'Cropping...' : 'Crop & Download'}
               </button>
             </div>
+            <StatusIndicator status={cropOp.state.status} error={cropOp.state.error} />
           </form>
         </div>
 
@@ -252,7 +275,8 @@ function ImageConverter() {
               submitForm(
                 '/api/image/watermark',
                 { text: watermarkText, target_format: targetFormat },
-                'watermarked.png'
+                'watermarked.png',
+                watermarkOp
               )
             }}
           >
@@ -267,15 +291,12 @@ function ImageConverter() {
               <button
                 className="button primary"
                 type="submit"
-                disabled={loading}
+                disabled={watermarkOp.isBusy}
               >
-                {loading ? (
-                  <span className="loading-spinner">Applying</span>
-                ) : (
-                  'Apply Watermark'
-                )}
+                {watermarkOp.isBusy ? 'Applying...' : 'Apply Watermark'}
               </button>
             </div>
+            <StatusIndicator status={watermarkOp.state.status} error={watermarkOp.state.error} />
           </form>
         </div>
 
@@ -288,7 +309,8 @@ function ImageConverter() {
               submitForm(
                 '/api/image/strip-exif',
                 { target_format: targetFormat },
-                'clean.png'
+                'clean.png',
+                stripExifOp
               )
             }}
           >
@@ -296,15 +318,12 @@ function ImageConverter() {
               <button
                 className="button primary"
                 type="submit"
-                disabled={loading}
+                disabled={stripExifOp.isBusy}
               >
-                {loading ? (
-                  <span className="loading-spinner">Stripping</span>
-                ) : (
-                  'Strip Metadata'
-                )}
+                {stripExifOp.isBusy ? 'Stripping...' : 'Strip Metadata'}
               </button>
             </div>
+            <StatusIndicator status={stripExifOp.state.status} error={stripExifOp.state.error} />
           </form>
         </div>
 
@@ -316,13 +335,6 @@ function ImageConverter() {
             </div>
           </div>
         )}
-        {loading && (
-          <p className="form-status">
-            <span className="loading-spinner">Processing image</span>
-          </p>
-        )}
-        {status && <p className="form-status">{status}</p>}
-        {error && <p className="form-error">{error}</p>}
       </div>
     </section>
   )
