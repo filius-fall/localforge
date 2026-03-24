@@ -26,6 +26,16 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from app.decision_logger import router as decision_logger_router
+from app.file_manager import (
+    create_session,
+    get_session,
+    delete_session,
+    add_file_to_session,
+    extend_session,
+    start_cleanup_task,
+    UPLOAD_DIR,
+    SESSION_RETENTION_MINUTES,
+)
 
 # Constants for security
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
@@ -162,7 +172,7 @@ TOOLS = [
         "slug": "media",
         "name": "Video & Audio Tools",
         "path": "/tools/media",
-        "description": "Trim, convert, compress, and extract audio locally.",
+        "description": "Trim, convert, compress, extract audio, and create GIFs from videos locally.",
     },
     {
         "slug": "text",
@@ -435,10 +445,66 @@ async def health_check() -> dict:
     return {"status": "ok"}
 
 
+@app.on_event("startup")
+async def startup_event():
+    """Start background cleanup task on startup."""
+    start_cleanup_task()
+    logger.info("application.started")
+
+
 @app.get("/api/tools")
 async def list_tools() -> list[dict]:
     logger.info("tools.list count=%s", len(TOOLS))
     return TOOLS
+
+
+class CreateSessionResponse(BaseModel):
+    session_id: str
+    expires_in_minutes: int
+
+
+@app.post("/api/session/create", response_model=CreateSessionResponse)
+async def create_session_endpoint() -> CreateSessionResponse:
+    """Create a new session for file retention."""
+    session_id = create_session()
+    return CreateSessionResponse(
+        session_id=session_id,
+        expires_in_minutes=SESSION_RETENTION_MINUTES,
+    )
+
+
+class ExtendSessionRequest(BaseModel):
+    session_id: str
+
+
+class ExtendSessionResponse(BaseModel):
+    success: bool
+    expires_in_minutes: int
+
+
+@app.post("/api/session/extend", response_model=ExtendSessionResponse)
+async def extend_session_endpoint(payload: ExtendSessionRequest) -> ExtendSessionResponse:
+    """Extend session expiration time."""
+    success = extend_session(payload.session_id)
+    return ExtendSessionResponse(
+        success=success,
+        expires_in_minutes=SESSION_RETENTION_MINUTES,
+    )
+
+
+class DeleteSessionRequest(BaseModel):
+    session_id: str
+
+
+class DeleteSessionResponse(BaseModel):
+    success: bool
+
+
+@app.post("/api/session/delete", response_model=DeleteSessionResponse)
+async def delete_session_endpoint(payload: DeleteSessionRequest) -> DeleteSessionResponse:
+    """Delete a session and all associated files."""
+    success = delete_session(payload.session_id)
+    return DeleteSessionResponse(success=success)
 
 
 class TimezoneConvertRequest(BaseModel):
@@ -1030,6 +1096,99 @@ async def trim_media(
         return _response_from_file(
             output_path, MEDIA_MEDIA_TYPES[format_key], f"trimmed.{format_key}"
         )
+
+
+@app.post("/api/media/video-to-gif")
+@limiter.limit("10/minute")
+async def video_to_gif(
+    request: Request,
+    file: UploadFile = File(...),
+    start_time: float = Form(0.0),
+    duration: float = Form(5.0),
+    fps: int = Form(15),
+    width: int | None = Form(None),
+    height: int | None = Form(None),
+    session_id: str | None = Form(None),
+) -> Response:
+    logger.info(
+        "media.video_to_gif name=%s start=%s duration=%s fps=%s session=%s",
+        file.filename,
+        start_time,
+        duration,
+        fps,
+        session_id or "none",
+    )
+    
+    ffmpeg = _ensure_binary("ffmpeg")
+    
+    # Use session directory if session_id provided, otherwise use temp directory
+    if session_id:
+        session = get_session(session_id)
+        if not session:
+            raise HTTPException(status_code=400, detail="Invalid or expired session.")
+        work_dir = UPLOAD_DIR / session_id
+        work_dir.mkdir(parents=True, exist_ok=True)
+        cleanup_needed = False
+    else:
+        work_dir = Path(tempfile.mkdtemp())
+        cleanup_needed = True
+    
+    try:
+        suffix = Path(file.filename or "").suffix
+        input_path = work_dir / f"input{suffix}"
+        await _save_upload(file, input_path)
+        
+        # Track source file in session
+        if session_id:
+            add_file_to_session(session_id, input_path)
+        
+        output_path = work_dir / "output.gif"
+        
+        # Build ffmpeg command for GIF creation
+        args = [
+            ffmpeg,
+            "-y",  # Overwrite output file
+            "-ss", str(start_time),  # Start time
+            "-t", str(duration),  # Duration
+            "-i", str(input_path),  # Input file
+        ]
+        
+        # Add scaling if width/height specified
+        if width and height:
+            args.extend(["-vf", f"fps={fps},scale={width}:{height}:force_original_aspect_ratio=decrease,pad={width}:{height}:(ow-iw)/2:(oh-ih)/2"])
+        elif width:
+            args.extend(["-vf", f"fps={fps},scale={width}:-1"])
+        elif height:
+            args.extend(["-vf", f"fps={fps},scale=-1:{height}"])
+        else:
+            args.extend(["-vf", f"fps={fps}"])
+        
+        args.append(str(output_path))
+        
+        _run_command(args, "Video to GIF conversion failed.")
+        
+        # Track output file in session
+        if session_id:
+            add_file_to_session(session_id, output_path)
+        
+        response = _response_from_file(
+            output_path, "image/gif", f"{Path(file.filename or 'video').stem}.gif"
+        )
+        
+        # If no session, cleanup immediately after sending
+        if cleanup_needed:
+            shutil.rmtree(work_dir, ignore_errors=True)
+        
+        return response
+    except HTTPException:
+        if cleanup_needed:
+            shutil.rmtree(work_dir, ignore_errors=True)
+        raise
+    except Exception as exc:
+        logger.exception("media.video_to_gif.failed error=%s", exc)
+        if cleanup_needed:
+            shutil.rmtree(work_dir, ignore_errors=True)
+        raise HTTPException(status_code=500, detail="Conversion failed.") from exc
 
 
 @app.post("/api/media/compress")

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { apiUrl } from '../lib/api'
 
 const parseFilename = (response: Response, fallback: string) => {
@@ -29,9 +29,53 @@ function MediaToolkit() {
   const [trimStart, setTrimStart] = useState('0')
   const [trimEnd, setTrimEnd] = useState('10')
   const [compressFormat, setCompressFormat] = useState('mp4')
+  const [gifStartTime, setGifStartTime] = useState('0')
+  const [gifDuration, setGifDuration] = useState('5')
+  const [gifFps, setGifFps] = useState('15')
+  const [gifWidth, setGifWidth] = useState('')
+  const [gifHeight, setGifHeight] = useState('')
   const [status, setStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [retainFiles, setRetainFiles] = useState(false)
+  const [sessionExpiresIn, setSessionExpiresIn] = useState<number>(30)
+
+  // Create session on mount if retainFiles is enabled
+  useEffect(() => {
+    if (retainFiles && !sessionId) {
+      createSession()
+    }
+  }, [retainFiles])
+
+  const createSession = async () => {
+    try {
+      const response = await fetch(apiUrl('/api/session/create'), {
+        method: 'POST',
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setSessionId(data.session_id)
+        setSessionExpiresIn(data.expires_in_minutes)
+      }
+    } catch (err) {
+      console.error('Failed to create session:', err)
+    }
+  }
+
+  const deleteSession = async () => {
+    if (!sessionId) return
+    try {
+      await fetch(apiUrl('/api/session/delete'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId }),
+      })
+      setSessionId(null)
+    } catch (err) {
+      console.error('Failed to delete session:', err)
+    }
+  }
 
   const runAction = async (action: () => Promise<void>) => {
     setLoading(true)
@@ -236,6 +280,111 @@ function MediaToolkit() {
                 Compress & Download
               </button>
             </div>
+          </form>
+        </div>
+
+        <div className="tool-section">
+          <h2>Create GIF from Video</h2>
+          <form
+            className="form"
+            onSubmit={async (event) => {
+              event.preventDefault()
+              if (!file) {
+                setError('Select a media file first.')
+                return
+              }
+
+              await runAction(async () => {
+                const formData = new FormData()
+                formData.append('file', file)
+                formData.append('start_time', gifStartTime)
+                formData.append('duration', gifDuration)
+                formData.append('fps', gifFps)
+                if (gifWidth) formData.append('width', gifWidth)
+                if (gifHeight) formData.append('height', gifHeight)
+                if (sessionId) formData.append('session_id', sessionId)
+
+                const response = await fetch(apiUrl('/api/media/video-to-gif'), {
+                  method: 'POST',
+                  body: formData,
+                })
+
+                if (!response.ok) {
+                  const payload = await response.json().catch(() => null)
+                  throw new Error(payload?.detail ?? 'Request failed.')
+                }
+
+                await downloadResponse(response, 'output.gif')
+              })
+            }}
+          >
+            <div className="form-grid">
+              <label className="field">
+                <span>Start time (seconds)</span>
+                <input
+                  value={gifStartTime}
+                  onChange={(event) => setGifStartTime(event.target.value)}
+                />
+              </label>
+              <label className="field">
+                <span>Duration (seconds)</span>
+                <input
+                  value={gifDuration}
+                  onChange={(event) => setGifDuration(event.target.value)}
+                />
+              </label>
+              <label className="field">
+                <span>FPS</span>
+                <input
+                  value={gifFps}
+                  onChange={(event) => setGifFps(event.target.value)}
+                />
+              </label>
+              <label className="field">
+                <span>Width (optional)</span>
+                <input
+                  value={gifWidth}
+                  onChange={(event) => setGifWidth(event.target.value)}
+                  placeholder="Auto"
+                />
+              </label>
+              <label className="field">
+                <span>Height (optional)</span>
+                <input
+                  value={gifHeight}
+                  onChange={(event) => setGifHeight(event.target.value)}
+                  placeholder="Auto"
+                />
+              </label>
+            </div>
+            <div className="action-row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+              <label className="field" style={{ flexDirection: 'row', alignItems: 'center', gap: '8px', marginBottom: 0 }}>
+                <input
+                  type="checkbox"
+                  checked={retainFiles}
+                  onChange={(event) => setRetainFiles(event.target.checked)}
+                  style={{ width: 'auto' }}
+                />
+                <span style={{ fontSize: '0.85rem', textTransform: 'none', letterSpacing: 'normal' }}>
+                  Keep files for {sessionExpiresIn} min (faster re-conversion)
+                </span>
+              </label>
+              <button className="button primary" type="submit" disabled={loading}>
+                Create GIF & Download
+              </button>
+            </div>
+            {sessionId && (
+              <div style={{ marginTop: '12px', padding: '10px 14px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--accent)' }}>
+                <strong>Session active:</strong> Files will be auto-deleted in {sessionExpiresIn} minutes. 
+                <button 
+                  type="button" 
+                  onClick={deleteSession}
+                  style={{ marginLeft: '12px', background: 'none', border: 'none', color: 'inherit', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.85rem' }}
+                >
+                  Delete now
+                </button>
+              </div>
+            )}
           </form>
         </div>
 

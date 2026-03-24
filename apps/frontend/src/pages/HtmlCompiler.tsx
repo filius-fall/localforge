@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 
 const starter = {
   html: `<div class="card">
@@ -39,6 +39,8 @@ function HtmlCompiler() {
   const [css, setCss] = useState(starter.css)
   const [js, setJs] = useState(starter.js)
   const [activeTab, setActiveTab] = useState<EditorTab>('html')
+  const [deviceView, setDeviceView] = useState<'desktop' | 'tablet' | 'mobile'>('desktop')
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   const srcDoc = useMemo(
     () => `<!DOCTYPE html>
@@ -75,6 +77,29 @@ function HtmlCompiler() {
     }
   }
 
+  // Device dimensions for preview
+  const deviceDimensions = {
+    desktop: { width: '100%', height: '100%' },
+    tablet: { width: '768px', height: '1024px' },
+    mobile: { width: '375px', height: '667px' },
+  }
+
+  const currentDimensions = deviceDimensions[deviceView]
+
+  // Handle Escape key to exit fullscreen
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isFullscreen])
+
   return (
     <section className="tool-page">
       <div className="tool-header">
@@ -86,11 +111,58 @@ function HtmlCompiler() {
       </div>
       <div className="tool-panel">
         <div className="action-row">
-          <button className="button ghost" type="button" onClick={handleReset}>
-            Reset sample
-          </button>
+          <div className="button-group">
+            <button className="button ghost" type="button" onClick={handleReset}>
+              Reset sample
+            </button>
+            <div className="device-selector">
+              <button
+                className={`button ${deviceView === 'desktop' ? 'primary' : 'ghost'}`}
+                type="button"
+                onClick={() => setDeviceView('desktop')}
+                title="Desktop view"
+              >
+                Desktop
+              </button>
+              <button
+                className={`button ${deviceView === 'tablet' ? 'primary' : 'ghost'}`}
+                type="button"
+                onClick={() => setDeviceView('tablet')}
+                title="Tablet view"
+              >
+                Tablet
+              </button>
+              <button
+                className={`button ${deviceView === 'mobile' ? 'primary' : 'ghost'}`}
+                type="button"
+                onClick={() => setDeviceView('mobile')}
+                title="Mobile view"
+              >
+                Mobile
+              </button>
+            </div>
+            <button
+              className={`button ${isFullscreen ? 'primary' : 'ghost'}`}
+              type="button"
+              onClick={() => setIsFullscreen(!isFullscreen)}
+              title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen preview'}
+            >
+              {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen Preview'}
+            </button>
+          </div>
         </div>
-        <div className="compiler-grid">
+        <div className={`compiler-grid ${isFullscreen ? 'fullscreen-preview' : ''}`}>
+          {isFullscreen && (
+            <button
+              className="fullscreen-exit-button"
+              type="button"
+              onClick={() => setIsFullscreen(false)}
+              aria-label="Exit fullscreen preview"
+              title="Exit fullscreen preview"
+            >
+              Back
+            </button>
+          )}
           <div className="editor-panel">
             <div className="editor-tabs" role="tablist" aria-label="HTML compiler tabs">
               {tabs.map((tab) => (
@@ -112,12 +184,39 @@ function HtmlCompiler() {
                 value={editorValue}
                 onChange={(event) => handleEditorChange(event.target.value)}
                 spellCheck={false}
+                autoFocus
               />
             </label>
           </div>
-          <div className="preview-pane resizable">
-            <p className="preview-label">Live Preview</p>
-            <iframe title="HTML preview" sandbox="allow-scripts" srcDoc={srcDoc} />
+          <div className="preview-pane" style={{ width: currentDimensions.width, height: currentDimensions.height }}>
+            {isFullscreen && (
+              <div className="preview-controls fullscreen-active">
+                <p className="preview-label">Live Preview</p>
+                <div className="preview-controls-actions">
+                  <div className="preview-device-indicator">{deviceView.charAt(0).toUpperCase() + deviceView.slice(1)}</div>
+                  <button
+                    className="button primary"
+                    type="button"
+                    onClick={() => setIsFullscreen(false)}
+                    title="Exit fullscreen"
+                  >
+                    Exit fullscreen
+                  </button>
+                </div>
+              </div>
+            )}
+            {!isFullscreen && (
+              <div className="preview-controls">
+                <p className="preview-label">Live Preview</p>
+                <div className="preview-device-indicator">{deviceView.charAt(0).toUpperCase() + deviceView.slice(1)}</div>
+              </div>
+            )}
+            <iframe
+              title="HTML preview"
+              sandbox="allow-scripts"
+              srcDoc={srcDoc}
+              className="preview-frame"
+            />
           </div>
         </div>
       </div>

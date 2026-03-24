@@ -653,6 +653,194 @@
   margin-bottom: 18px;
 }
 
+/* Enhanced HTML Compiler Styles */
+.button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.device-selector {
+  display: flex;
+  gap: 4px;
+  border-radius: 999px;
+  background: var(--surface-glass);
+  padding: 4px;
+}
+
+.device-selector .button {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.device-selector .button:not(.primary) {
+  background: transparent;
+  color: var(--muted);
+}
+
+.device-selector .button:not(.primary):hover {
+  background: rgba(30, 41, 59, 0.7);
+  color: var(--ink);
+}
+
+.compiler-grid.fullscreen-preview {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 1000 !important;
+  margin: 0 !important;
+  padding: 20px !important;
+  background: var(--surface) !important;
+  grid-template-columns: 1fr !important;
+  min-height: auto !important;
+}
+
+.compiler-grid.fullscreen-preview .editor-panel {
+  position: absolute !important;
+  top: 20px !important;
+  left: 20px !important;
+  width: 400px !important;
+  height: calc(100vh - 40px) !important;
+  z-index: 1001 !important;
+  background: var(--surface) !important;
+  border-radius: var(--radius-lg) !important;
+  border: 1px solid var(--border-strong) !important;
+  padding: 14px !important;
+}
+
+.compiler-grid.fullscreen-preview .preview-pane {
+  position: absolute !important;
+  top: 20px !important;
+  right: 20px !important;
+  left: 420px !important;
+  height: calc(100vh - 40px) !important;
+  min-height: auto !important;
+  z-index: 1000 !important;
+  background: var(--surface) !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.compiler-grid.fullscreen-preview .preview-pane iframe {
+  flex: 1 !important;
+  min-height: 0 !important;
+}
+
+/* Ensure normal preview pane keeps its original styles */
+.compiler-grid:not(.fullscreen-preview) .preview-pane {
+  position: static;
+  height: auto;
+  min-height: 520px;
+  background: rgba(14, 20, 36, 0.95);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-strong);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.preview-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.preview-controls.fullscreen-active {
+  background: rgba(14, 20, 36, 0.95);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+
+.preview-controls-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fullscreen-exit-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1002;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: rgba(10, 16, 28, 0.92);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+}
+
+.fullscreen-exit-button:hover {
+  background: rgba(20, 28, 48, 0.98);
+}
+
+.preview-device-indicator {
+  background: var(--accent-subtle);
+  color: var(--accent);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.preview-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1200px) {
+  .compiler-grid.fullscreen-preview .editor-panel {
+    width: 320px;
+  }
+  
+  .compiler-grid.fullscreen-preview .preview-pane {
+    margin-left: 340px;
+  }
+}
+
+@media (max-width: 900px) {
+  .compiler-grid.fullscreen-preview .editor-panel {
+    position: static;
+    width: 100%;
+    height: auto;
+    margin-bottom: 16px;
+  }
+  
+  .compiler-grid.fullscreen-preview .preview-pane {
+    margin-left: 0;
+    height: 50vh !important;
+  }
+
+  .preview-controls.fullscreen-active,
+  .preview-controls-actions {
+    flex-wrap: wrap;
+  }
+
+  .fullscreen-exit-button {
+    top: 12px;
+    right: 12px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+  }
+}
+
 .tool-section h2 {
   font-family: 'Space Grotesk', sans-serif;
   font-size: 1.1rem;
